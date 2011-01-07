@@ -1,6 +1,7 @@
 package weka.classifiers.functions;
 
 import core.ExecutionContextFactory;
+import core.adapters.DataAdapter;
 import core.copop.CoPopulations;
 import core.copop.RuleSet;
 import core.ga.ops.ec.ExecutionContext;
@@ -29,50 +30,57 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public void buildClassifier(Instances data) throws Exception {
-        Enumeration instances = data.enumerateInstances();
-        ArrayList<Instance> list = Collections.list(instances);
 
+
+        // mock MONK dataset
         ExecutionContext ec;
         FitnessEval fit = FitnessEvaluatorFactory.EVAL_FMEASURE;
         ec = ExecutionContextFactory.MONK(1, false, 1000, fit);
-        ///// Try to visualize
+
+        // here is the junction
+        // when DataAdapter is set as a bundle then weka's instances are used
+        DataAdapter adapter = new DataAdapter(data);
+        ec.setBundle(adapter.getBundle());
+
+        ///// Try to visualize initial problem
         ArrayList comb;
+        Enumeration instances = data.enumerateInstances();
+        ArrayList<Instance> list = Collections.list(instances);
         CoordCalc c = new CoordCalc(ec.signature());
         String[][] datavis = RuleASCIIPlotter.initEmptyDataVis(c);
         for (Instance instance : list) {
             comb = new ArrayList();
 
             for (int i = 0; i < 6; i++) {
-                comb.add((int) instance.value(i)+1);
+                comb.add((int) instance.value(i) + 1);
             }
-            datavis[c.getY(comb)][c.getX(comb)] = instance.value(6)!=0.0d ? " " : "#";
+            datavis[c.getY(comb)][c.getX(comb)] =
+                    instance.value(6) != 0.0d ? " " : "#";
         }
         RuleASCIIPlotter.simplePlot(datavis);
 
-//        calc.getX(expected);
-//        calc.getY(expected);
-//        RuleASCIIPlotter.simplePlot(
-//        RuleASCIIPlotter.getPlot(ec.signature(), new Plotable() {
-//
-//            public String call(List<Integer> comb) {
-//                return m3(comb);
-//            }
-//        }));
-
+        // Set coevolution params
         long seed = System.currentTimeMillis();
         ec.rand().setSeed(seed);
         ec.setMt(0.02);
         ec.setRsmp(0.001);
         ec.setMaxRuleSetLength(5);
         co = new CoPopulations(1000, ec);
-        int t = 170;
+        int t = 7;
+
+        // evolution
+        System.out.println("Starting coevolution");
         while (t-- > 0)
             co.evolve();
+        System.out.println("Coevolution finished");
+
+        // final report
         best = co.getBest().getRS();
         System.out.println("Visualization: ");
         String[][] plot = ec.getBundle().getPlotter().plotRuleSet(best);
         RuleASCIIPlotter.simplePlot(plot);
-        System.out.println("The stats are " + co.ruleSets().getBest().getCm().getWeighted());
+        System.out.println("The stats are "
+                           + co.ruleSets().getBest().getCm().getWeighted());
     }
     CoPopulations co;
 
@@ -86,7 +94,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     public double classifyInstance(Instance instance) throws Exception {
         ArrayList<Integer> list = new ArrayList<Integer>();
         for (int i = 0; i < 6; i++) {
-            list.add((int) instance.value(i)+1);
+            list.add((int) instance.value(i) + 1);
         }
         int result = best.apply(list);
         return 1 - result;
@@ -94,7 +102,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public Capabilities getCapabilities() {
-        Capabilities result = super.getCapabilities();   // returns the object from weka.classifiers.Classifier
+        // returns the object from weka.classifiers.Classifier
+        Capabilities result = super.getCapabilities();
         result.disableAll();
         result.enable(Capability.NOMINAL_ATTRIBUTES);
         result.enable(Capability.NOMINAL_CLASS);
@@ -105,9 +114,14 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
      * Main method for testing this class.
      */
     public static void main(String[] argv) {
-        URL resource = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-1.test.arff");
+        URL resource = CoevolutionaryRuleExtractor.class.getResource(
+                "/monks/monks-1.test.arff");
         // Instances.main(new String[] {resource.getPath()});
-        String[] args = new String[]{"-i", "-t", resource.getPath(), "-T", resource.getPath()};
+        String[] args = new String[]{
+            "-i", // per class statistics
+            "-t", resource.getPath(), // train set
+            "-T", resource.getPath() // test set
+        };
         runClassifier(new CoevolutionaryRuleExtractor(), args);
     }
 }

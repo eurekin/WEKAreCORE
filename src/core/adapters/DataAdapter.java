@@ -2,7 +2,8 @@ package core.adapters;
 
 import core.DataSetBundle;
 import core.ga.RuleChromosomeSignature;
-import core.io.dataframe.Row;
+import core.ga.RulePrinter;
+import core.io.dataframe.Mapper;
 import core.io.dataframe.UniformDataFrame;
 import core.io.repr.col.AbstractColumn;
 import core.io.repr.col.Column;
@@ -15,8 +16,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -29,13 +32,15 @@ import weka.core.converters.ArffLoader.ArffReader;
  */
 public class DataAdapter {
 
+    DataSetBundle bundle;
+
+    public DataSetBundle getBundle() {
+        return bundle;
+    }
+
     public DataAdapter(Instances wekaInsts) {
-        // aktualnie intepretowane są String
-        // potrzeba tworzyć dataframe opartego o liczby,
-        // a do wyświetlania trzymać mapkę z liczb na napisy
-        List<DomainMemoizable> l = new ArrayList<DomainMemoizable>();
         List<DomainMemoizable> doms = new ArrayList<DomainMemoizable>();
-        List<Column<String>> cols = new ArrayList<Column<String>>();
+        List<Column<Integer>> cols = new ArrayList<Column<Integer>>();
         for (final Attribute attribute : attrs(wekaInsts)) {
             makeSureIsNominal(attribute);
             doms.add(new AttributeDomain(attribute));
@@ -44,13 +49,17 @@ public class DataAdapter {
         Attribute classAttribute = wekaInsts.classAttribute();
         makeSureIsNominal(classAttribute);
         DomainMemoizable classDom = new AttributeDomain(classAttribute);
-        Column<String> classCol = new AttributeColumn<String>(wekaInsts, classAttribute);
+        Column<Integer> classCol = new AttributeColumn(wekaInsts, classAttribute);
         RuleChromosomeSignature sig = new RuleChromosomeSignature(doms, classDom);
         RuleASCIIPlotter plotter = new RuleASCIIPlotter(sig);
 
-        UniformDataFrame<String, String> udf =
-                new UniformDataFrame<String, String>(classCol, cols, wekaInsts.numInstances());
-        DataSetBundle bundle = new DataSetBundle(null, plotter, sig, null, null);
+        UniformDataFrame<Integer, Integer> udf =
+                new UniformDataFrame<Integer, Integer>(
+                classCol, cols, wekaInsts.numInstances());
+
+        RulePrinter rp = new RulePrinter(getMapperFor(wekaInsts));
+        final String relname = wekaInsts.relationName();
+        bundle = new DataSetBundle(udf, plotter, sig, rp, relname);
     }
 
     private void makeSureIsNominal(Attribute attribute)
@@ -78,6 +87,8 @@ public class DataAdapter {
     }
 
     public static void main(String[] args) throws IOException {
+
+
         URL resource = DataAdapter.class.getResource("/monks/monks-1.test.arff");
 
         Instances.main(new String[]{resource.getPath()});
@@ -90,12 +101,39 @@ public class DataAdapter {
         DataAdapter dataAdapter = new DataAdapter(data);
     }
 
-    private static class AttributeColumn<T> extends AbstractColumn<T> {
+    public static Mapper getMapperFor(Instances i) {
+        Map<Integer, String> namemap = newmap();
+        Map<Integer, Map<Integer, String>> valmap = newmap();
+        ArrayList<Attribute> atrs = Collections.list(i.enumerateAttributes());
+
+        int j = 0;
+        for (Attribute attribute : atrs) {
+            valmap.put(j, toMap(Collections.list(attribute.enumerateValues())));
+            namemap.put(j, attribute.name());
+            j++;
+        }
+        Mapper mapper = new Mapper(valmap, namemap);
+        return mapper;
+    }
+
+    public static <K, V> HashMap<K, V> newmap() {
+        return new HashMap<K, V>();
+    }
+
+    public static <V> Map<Integer, V> toMap(List<V> list) {
+        Integer i = 0;
+        HashMap<Integer, V> map = newmap();
+        for (V object : list)
+            map.put(i++, object);
+        return map;
+    }
+
+    private static class AttributeColumn extends AbstractColumn<Integer> {
 
         public AttributeColumn(Instances inst, Attribute atr) {
             inst.instance(1).stringValue(atr);
             for (Instance i : instances(inst)) {
-                list.add((T) i.stringValue(atr));
+                list.add((int) (i.value(atr)));
             }
         }
     }

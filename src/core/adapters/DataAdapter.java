@@ -69,8 +69,9 @@ public class DataAdapter {
         }
     }
 
-    private static List<String> values(Attribute i) {
-        return list(i.enumerateValues(), String.class);
+    private static List<Integer> values(Attribute i) {
+        return new ArrayList<Integer>(
+                toMap(list(i.enumerateValues(), String.class)).keySet());
     }
 
     private static List<Instance> instances(Instances i) {
@@ -87,8 +88,6 @@ public class DataAdapter {
     }
 
     public static void main(String[] args) throws IOException {
-
-
         URL resource = DataAdapter.class.getResource("/monks/monks-1.test.arff");
 
         Instances.main(new String[]{resource.getPath()});
@@ -98,6 +97,7 @@ public class DataAdapter {
         ArffReader arff = new ArffReader(reader);
         Instances data = arff.getData();
         data.setClassIndex(data.numAttributes() - 1);
+
         DataAdapter dataAdapter = new DataAdapter(data);
     }
 
@@ -112,7 +112,11 @@ public class DataAdapter {
             namemap.put(j, attribute.name());
             j++;
         }
-        Mapper mapper = new Mapper(valmap, namemap);
+        String clazzName = i.classAttribute().name();
+        Map<Integer, String> classmap =
+                toMap(Collections.list(i.classAttribute().enumerateValues()));
+
+        Mapper mapper = new Mapper(valmap, namemap, clazzName, classmap);
         return mapper;
     }
 
@@ -131,22 +135,21 @@ public class DataAdapter {
     private static class AttributeColumn extends AbstractColumn<Integer> {
 
         public AttributeColumn(Instances inst, Attribute atr) {
-            inst.instance(1).stringValue(atr);
             for (Instance i : instances(inst)) {
                 list.add((int) (i.value(atr)));
             }
         }
     }
 
-    private static class AttributeDomain implements DomainMemoizable {
+    private static class AttributeDomain implements DomainMemoizable<Integer> {
 
-        final HashSet hashSet;
+        final HashSet<Integer> hashSet;
 
         public AttributeDomain(Attribute attribute) {
-            this.hashSet = new HashSet(values(attribute));
+            this.hashSet = new HashSet<Integer>(values(attribute));
         }
 
-        public Set getDomain() {
+        public Set<Integer> getDomain() {
             return hashSet;
         }
 

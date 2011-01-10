@@ -34,13 +34,14 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
         // mock MONK dataset
         ExecutionContext ec;
-        FitnessEval fit = FitnessEvaluatorFactory.EVAL_FMEASURE;
+        FitnessEval fit = FitnessEvaluatorFactory.EVAL_ACCURACY;
         ec = ExecutionContextFactory.MONK(1, false, 1000, fit);
 
         // here is the junction
         // when DataAdapter is set as a bundle then weka's instances are used
         DataAdapter adapter = new DataAdapter(data);
         ec.setBundle(adapter.getBundle());
+        final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
         ///// Try to visualize initial problem
         ArrayList comb;
@@ -52,21 +53,25 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
             comb = new ArrayList();
 
             for (int i = 0; i < 6; i++) {
-                comb.add((int) instance.value(i) + 1);
+                comb.add((int) instance.value(i));
             }
             datavis[c.getY(comb)][c.getX(comb)] =
-                    instance.value(6) != 0.0d ? " " : "#";
+                    new Integer((int) instance.value(6)).toString();
         }
-        RuleASCIIPlotter.simplePlot(datavis);
+//        RuleASCIIPlotter.simpleBinaryPlot(datavis);
+        plotter.plotPlots(datavis);
+
+
 
         // Set coevolution params
         long seed = System.currentTimeMillis();
         ec.rand().setSeed(seed);
-        ec.setMt(0.02);
-        ec.setRsmp(0.001);
-        ec.setMaxRuleSetLength(5);
+        ec.setMt(0.0001);
+        ec.setRsmp(0.2);
+        ec.setMaxRuleSetLength(10);
         co = new CoPopulations(1000, ec);
-        int t = 7;
+        co.setDebug(true);
+        int t = 50;
 
         // evolution
         System.out.println("Starting coevolution");
@@ -76,11 +81,11 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
         // final report
         best = co.getBest().getRS();
-        System.out.println("Visualization: ");
-        String[][] plot = ec.getBundle().getPlotter().plotRuleSet(best);
-        RuleASCIIPlotter.simplePlot(plot);
         System.out.println("The stats are "
                            + co.ruleSets().getBest().getCm().getWeighted());
+        System.out.println("The final classifier:");
+        System.out.println("Visualization: ");
+        plotter.detailedPlots(best);
     }
     CoPopulations co;
 
@@ -94,10 +99,10 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     public double classifyInstance(Instance instance) throws Exception {
         ArrayList<Integer> list = new ArrayList<Integer>();
         for (int i = 0; i < 6; i++) {
-            list.add((int) instance.value(i) + 1);
+            list.add((int) instance.value(i));
         }
         int result = best.apply(list);
-        return 1 - result;
+        return result;
     }
 
     @Override
@@ -120,7 +125,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         String[] args = new String[]{
             "-i", // per class statistics
             "-t", resource.getPath(), // train set
-            "-T", resource.getPath() // test set
+            "-T", resource.getPath() // test set (will go with 10-fold CV if not set)
         };
         runClassifier(new CoevolutionaryRuleExtractor(), args);
     }

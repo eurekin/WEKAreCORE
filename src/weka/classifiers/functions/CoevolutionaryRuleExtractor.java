@@ -21,12 +21,15 @@ import weka.core.Instances;
 
 /**
  *
+ * Success is not final, failure is not fatal: it is the courage to continue
+ * that counts.
+ *                                                     --- Winston Churchill
+ *
  * @author gmatoga
  */
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     private RuleSet best;
-    ArrayList expected = new ArrayList();
 
     @Override
     public void buildClassifier(Instances data) throws Exception {
@@ -59,6 +62,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
                     new Integer((int) instance.value(6)).toString();
         }
 //        RuleASCIIPlotter.simpleBinaryPlot(datavis);
+        System.out.println("About to plot training data:");;
         plotter.plotPlots(datavis);
 
 
@@ -68,7 +72,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.rand().setSeed(seed);
         ec.setMt(0.0001);
         ec.setRsmp(0.2);
-        ec.setMaxRuleSetLength(10);
+        ec.setMaxRuleSetLength(16);
         co = new CoPopulations(1000, ec);
         co.setDebug(true);
         int t = 50;
@@ -82,18 +86,17 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         // final report
         best = co.getBest().getRS();
         System.out.println("The stats are "
-                           + co.ruleSets().getBest().getCm().getWeighted());
+                + co.ruleSets().getBest().getCm().getWeighted());
         System.out.println("The final classifier:");
         System.out.println("Visualization: ");
         plotter.detailedPlots(best);
     }
-    CoPopulations co;
+    transient CoPopulations co;
 
     @Override
     public Enumeration listOptions() {
         return super.listOptions();
     }
-    int id = 0;
 
     @Override
     public double classifyInstance(Instance instance) throws Exception {
@@ -119,13 +122,16 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
      * Main method for testing this class.
      */
     public static void main(String[] argv) {
-        URL resource = CoevolutionaryRuleExtractor.class.getResource(
-                "/monks/monks-1.test.arff");
+        int M = 1;
+        URL train = CoevolutionaryRuleExtractor.class.getResource(
+                "/monks/monks-" + M + ".train.arff");
+        URL test = CoevolutionaryRuleExtractor.class.getResource(
+                "/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
         String[] args = new String[]{
             "-i", // per class statistics
-            "-t", resource.getPath(), // train set
-            "-T", resource.getPath() // test set (will go with 10-fold CV if not set)
+            "-t", train.getPath(), // train set
+            "-T", test.getPath() // test set (will go with 10-fold CV if not set)
         };
         runClassifier(new CoevolutionaryRuleExtractor(), args);
     }

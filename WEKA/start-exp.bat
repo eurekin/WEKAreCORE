@@ -1,0 +1,1 @@
+   "%JAVA_HOME%\bin\java" -server -classpath weka.jar -Djava.security.policy=remote.policy -Djava.rmi.server.codebase=file:weka.jar weka.gui.experiment.Experimenter

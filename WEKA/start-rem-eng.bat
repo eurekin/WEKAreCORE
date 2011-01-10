@@ -1,0 +1,1 @@
+   "%JAVA_HOME%\bin\java" -server -classpath remoteEngine.jar -Djava.security.policy=remote.policy  weka.experiment.RemoteEngine -p %1

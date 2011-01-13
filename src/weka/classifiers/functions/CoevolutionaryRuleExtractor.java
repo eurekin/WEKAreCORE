@@ -11,6 +11,9 @@ import core.ga.ops.ec.FitnessEval;
 import core.ga.ops.ec.FitnessEvaluatorFactory;
 import core.vis.CoordCalc;
 import core.vis.RuleASCIIPlotter;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +22,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import weka.classifiers.RandomizableClassifier;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -98,6 +103,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRulePopSize(rulePopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
 
+        spitOutOptions();
+
 
         co = new CoPopulations(ruleSetPopulationSize, ec);
         co.setDebug(true);
@@ -120,26 +127,6 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
                 ec.getBundle().getPrinter().print(best);
     }
     transient CoPopulations co;
-
-    @Override
-    public Enumeration listOptions() {
-        Vector newVector = new Vector(10);
-
-        newVector.addElement(new Option(
-                "/tNumber of generations to evolve",
-                "G", 1, "-G <generations."));
-
-        newVector.addElement(new Option(
-                "/tTurn on or off token competition.",
-                "T", 0, "-T"));
-
-
-        Enumeration enu = super.listOptions();
-//        while (enu.hasMoreElements()) {
-//            newVector.addElement(enu.nextElement());
-//        }
-        return newVector.elements();
-    }
 
     @Override
     public double classifyInstance(Instance instance) throws Exception {
@@ -165,7 +152,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
      * Main method for testing this class.
      */
     public static void main(String[] argv) {
-        int M = 2;
+        int M = 1;
         URL train = CoevolutionaryRuleExtractor.class.getResource(
                 "/monks/monks-" + M + ".train.arff");
         URL test = CoevolutionaryRuleExtractor.class.getResource(
@@ -176,6 +163,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
             "-t", train.getPath(), // train set
             "-T", test.getPath() // test set (will go with 10-fold CV if not set)
         };
+        System.out.println("args = " + Arrays.deepToString(args));
         runClassifier(new CoevolutionaryRuleExtractor(), args);
     }
 
@@ -185,6 +173,45 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
             return bestString;
         else
             return "reCORE";
+    }
+
+    @Override
+    public Enumeration listOptions() {
+        Vector newVector = new Vector(10);
+
+        newVector.addElement(new Option(
+                "Number of generations to evolve",
+                "G", 1, "-G <generations>"));
+
+        newVector.addElement(new Option(
+                "Turn on or off token competition.",
+                "T", 0, "-T"));
+
+        newVector.addElement(new Option(
+                "Rule mutation probability.",
+                "MM", 0, "-MM <double>"));
+
+        newVector.addElement(new Option(
+                "Rule set mutation probability.",
+                "MP", 0, "-MP <double>"));
+
+        newVector.addElement(new Option(
+                "Maximum rule count.",
+                "R", 1, "-R <rules>"));
+
+        newVector.addElement(new Option(
+                "Rule population size.",
+                "CM", 0, "-CM <count>"));
+
+        newVector.addElement(new Option(
+                "Rule set population size.",
+                "CP", 0, "-CP <count>"));
+
+        Enumeration enu = super.listOptions();
+        while (enu.hasMoreElements()) {
+            newVector.addElement(enu.nextElement());
+        }
+        return newVector.elements();
     }
 
     @Override
@@ -218,13 +245,20 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public void setOptions(String[] options) throws Exception {
-        setGenerations(Integer.parseInt(Utils.getOption('G', options)));
-        setRuleMutationProbability(Double.parseDouble(Utils.getOption("-MM", options)));
-        setRuleSetMutationProbability(Double.parseDouble(Utils.getOption("-MP", options)));
-        setMaxRulesCount(Integer.parseInt(Utils.getOption('R', options)));
-        setRulePopulationSize(Integer.parseInt(Utils.getOption("-CM", options)));
-        setRuleSetPopulationSize(Integer.parseInt(Utils.getOption("-CP", options)));
-        setTokenCompetitionEnabled(Utils.getFlag("T", options));
+        if (ok(Utils.getOption('G', options)))
+            setGenerations(Integer.parseInt(Utils.getOption('G', options)));
+        if (ok(Utils.getOption("-MM", options)))
+            setRuleMutationProbability(Double.parseDouble(Utils.getOption("-MM", options)));
+        if (ok(Utils.getOption("-MP", options)))
+            setRuleSetMutationProbability(Double.parseDouble(Utils.getOption("-MP", options)));
+        if (ok(Utils.getOption('R', options)))
+            setMaxRulesCount(Integer.parseInt(Utils.getOption('R', options)));
+        if (ok(Utils.getOption("-CM", options)))
+            setRulePopulationSize(Integer.parseInt(Utils.getOption("-CM", options)));
+        if (ok(Utils.getOption("-CP", options)))
+            setRuleSetPopulationSize(Integer.parseInt(Utils.getOption("-CP", options)));
+        if (Utils.getOptionPos("T", options) != -1)
+            setTokenCompetitionEnabled(Utils.getFlag("T", options));
 
         super.setOptions(options);
     }
@@ -291,5 +325,37 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     public void setRuleSetPopulationSize(int ruleSetPopulationSize) {
         this.ruleSetPopulationSize = ruleSetPopulationSize;
+    }
+
+    private void spitOutOptions() {
+        try {
+            BeanInfo info = Introspector.getBeanInfo(this.getClass());
+            System.out.println("Using following properties: ");
+            for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+                System.out.print(padRight(pd.getName(), 30));
+                System.out.print("\t");
+                Object result = pd.getReadMethod().invoke(this);
+                if (result instanceof Object[])
+                    System.out.println(Arrays.deepToString((Object[]) result));
+                else
+                    System.out.println(result);
+            }
+
+        } catch (Exception ex) {
+            Logger.getLogger(CoevolutionaryRuleExtractor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public static String padRight(String s, int n) {
+        return String.format("%1$-" + n + "s", s);
+    }
+
+    public static String padLeft(String s, int n) {
+        return String.format("%1$#" + n + "s", s);
+    }
+
+    // For debug only;
+    private boolean ok(String option) {
+        return option != null && option.length() != 0 && !option.isEmpty();
     }
 }

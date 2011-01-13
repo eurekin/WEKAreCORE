@@ -50,6 +50,7 @@ public class DataAdapter {
         makeSureIsNominal(classAttribute);
         DomainMemoizable classDom = new AttributeDomain(classAttribute);
         Column<Integer> classCol = new AttributeColumn(wekaInsts, classAttribute);
+        System.out.println("Got following cols: " + doms);
         RuleChromosomeSignature sig = new RuleChromosomeSignature(doms, classDom);
         RuleASCIIPlotter plotter = new RuleASCIIPlotter(sig);
 

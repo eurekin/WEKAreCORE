@@ -14,6 +14,10 @@ import core.vis.RuleASCIIPlotter;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +28,7 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import weka.classifiers.Evaluation;
 import weka.classifiers.RandomizableClassifier;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -31,6 +36,7 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Option;
 import weka.core.Utils;
+import weka.core.converters.ConverterUtils.DataSource;
 
 /**
  *
@@ -52,6 +58,28 @@ import weka.core.Utils;
  */
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
+    private static double evalOnMonk(int M) throws FileNotFoundException, Exception, IOException {
+        URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
+        URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
+        // Instances.main(new String[] {resource.getPath()});
+        String[] args = new String[]{"-i", "-t", train.getPath(), "-T", test.getPath()};
+        //System.out.println("args = " + Arrays.deepToString(args));
+        //runClassifier(new CoevolutionaryRuleExtractor(), args);
+        PrintStream a = System.out;
+        File createTempFile = File.createTempFile("ignoreme", "tmp");
+        System.setOut(new PrintStream(createTempFile));
+        Instances trainData = DataSource.read(train.getPath());
+        Instances testData = DataSource.read(test.getPath());
+        trainData.setClassIndex(trainData.numAttributes() - 1);
+        testData.setClassIndex(testData.numAttributes() - 1);
+        CoevolutionaryRuleExtractor myclass = new CoevolutionaryRuleExtractor();
+        myclass.setOptions(args);
+        myclass.buildClassifier(trainData);
+        Evaluation eval = new Evaluation(trainData);
+        eval.evaluateModel(myclass, testData);
+        System.setOut(a);
+        return eval.pctCorrect();
+    }
     private RuleSet best;
     private String bestString;
 
@@ -107,7 +135,6 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
 
         co = new CoPopulations(ruleSetPopulationSize, ec);
-        co.setDebug(true);
 
         // evolution
         System.out.println("Starting coevolution");
@@ -151,20 +178,14 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     /**
      * Main method for testing this class.
      */
-    public static void main(String[] argv) {
-        int M = 1;
-        URL train = CoevolutionaryRuleExtractor.class.getResource(
-                "/monks/monks-" + M + ".train.arff");
-        URL test = CoevolutionaryRuleExtractor.class.getResource(
-                "/monks/monks-" + M + ".test.arff");
-        // Instances.main(new String[] {resource.getPath()});
-        String[] args = new String[]{
-            "-i", // per class statistics
-            "-t", train.getPath(), // train set
-            "-T", test.getPath() // test set (will go with 10-fold CV if not set)
-        };
-        System.out.println("args = " + Arrays.deepToString(args));
-        runClassifier(new CoevolutionaryRuleExtractor(), args);
+    public static void main(String[] argv) throws Exception {
+        int M = 3;
+        for (int j = 1; j < 4; j++) {
+            for (int i = 0; i < 50; i++) {
+                double evalOnMonk = evalOnMonk(j);
+                System.out.println(j + ", " + evalOnMonk);
+            }
+        }
     }
 
     @Override
@@ -263,12 +284,12 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 100;
-    double ruleMutationProbability = 1.0E-4;
+    private int generations = 1000;
+    double ruleMutationProbability = 0.02;
     double ruleSetMutationProbability = 0.2;
     int maxRulesCount = 9;
-    int rulePopulationSize = 1000;
-    int ruleSetPopulationSize = 1000;
+    int rulePopulationSize = 20;
+    int ruleSetPopulationSize = 10;
     private boolean tokenCompetitionEnabled = true;
 
     public boolean isTokenCompetitionEnabled() {

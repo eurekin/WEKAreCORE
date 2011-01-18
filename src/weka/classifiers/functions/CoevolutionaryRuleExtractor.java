@@ -28,8 +28,14 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.RandomizableClassifier;
+import weka.classifiers.bayes.BayesNet;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.rules.OneR;
+import weka.classifiers.rules.ZeroR;
+import weka.classifiers.trees.J48graft;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
@@ -58,11 +64,15 @@ import weka.core.converters.ConverterUtils.DataSource;
  */
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
-    private static double evalOnMonk(int M) throws FileNotFoundException, Exception, IOException {
+    private static double evalOnMonk(int M, Classifier classifier) throws FileNotFoundException, Exception, IOException {
         URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
         URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
-        String[] args = new String[]{"-i", "-t", train.getPath(), "-T", test.getPath()};
+        String[] args = new String[]{
+            //            "-i",
+//            "-t", train.getPath()
+//            "-T", test.getPath()
+        };
         //System.out.println("args = " + Arrays.deepToString(args));
         //runClassifier(new CoevolutionaryRuleExtractor(), args);
         PrintStream a = System.out;
@@ -72,11 +82,10 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         Instances testData = DataSource.read(test.getPath());
         trainData.setClassIndex(trainData.numAttributes() - 1);
         testData.setClassIndex(testData.numAttributes() - 1);
-        CoevolutionaryRuleExtractor myclass = new CoevolutionaryRuleExtractor();
-        myclass.setOptions(args);
-        myclass.buildClassifier(trainData);
+        classifier.setOptions(args);
+        classifier.buildClassifier(trainData);
         Evaluation eval = new Evaluation(trainData);
-        eval.evaluateModel(myclass, testData);
+        eval.evaluateModel(classifier, testData);
         System.setOut(a);
         return eval.pctCorrect();
     }
@@ -88,7 +97,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
 
         // mock MONK dataset
-        FitnessEval fit = FitnessEvaluatorFactory.EVAL_ACCURACY;
+        FitnessEval fit = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
         // here is the junction
         // when DataAdapter is set as a bundle then weka's instances are used
@@ -130,6 +139,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setMaxRuleSetLength(maxRulesCount);
         ec.setRulePopSize(rulePopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
+        ec.setTokenCompetitionWeight(1.0);
+        ec.setEliteSelectionSize(1);
 
         spitOutOptions();
 
@@ -182,8 +193,22 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         int M = 3;
         for (int j = 1; j < 4; j++) {
             for (int i = 0; i < 50; i++) {
-                double evalOnMonk = evalOnMonk(j);
-                System.out.println(j + ", " + evalOnMonk);
+//                double evalOnMonk = evalOnMonk(j, new CoevolutionaryRuleExtractor());
+                Classifier[] classifiers = new Classifier[]{
+                    new J48graft(),
+                    new ZeroR(),
+                    new OneR(),
+                    new MultilayerPerceptron(),
+                    new BayesNet(),
+                    new NaiveBayes(),
+                    new RBFNetwork(),
+                    new SMO()
+                };
+                for (Classifier classifier : classifiers) {
+
+                    double evalOnMonk = evalOnMonk(j, classifier);
+                    System.out.println(classifier.getClass().getName() + ", " + i + ", " + j + ", " + evalOnMonk);
+                }
             }
         }
     }
@@ -284,12 +309,12 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 1000;
+    private int generations = 2000;
     double ruleMutationProbability = 0.02;
-    double ruleSetMutationProbability = 0.2;
+    double ruleSetMutationProbability = 0.02;
     int maxRulesCount = 9;
-    int rulePopulationSize = 20;
-    int ruleSetPopulationSize = 10;
+    int rulePopulationSize = 200;
+    int ruleSetPopulationSize = 200;
     private boolean tokenCompetitionEnabled = true;
 
     public boolean isTokenCompetitionEnabled() {

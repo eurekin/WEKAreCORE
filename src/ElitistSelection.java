@@ -44,7 +44,7 @@ public class ElitistSelection {
     }
 
     public static void compute(long seed, boolean debug, boolean trueRun) {
-        FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_ACCURACY;
+        FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
         ExecutionEnv ec = ExecutionContextFactory.MONK(1, false, 10, fiteval);
         ec.setRand(new Random(seed));
@@ -59,16 +59,16 @@ public class ElitistSelection {
         ec.setRuleSortingEnabled(false);
 
         if (trueRun) {
-            popSize = 20;
-            ec.setRulePopSize(20);
+            popSize = 200;
+            ec.setRulePopSize(200);
             ec.setEliteSelectionSize(1);
-            ec.setRsmp(0.02);
-            ec.setMt(0.02);
-            ec.setRuleSortingEnabled(false);
+            ec.setRsmp(0.2);
+            ec.setMt(0.2);
+            ec.setRuleSortingEnabled(true);
             ec.setTokenCompetitionEnabled(true);
             ec.setTokenCompetitionWeight(1.0);
             ec.setRand(new Random());
-            ec.setMaxRuleSetLength(9);
+            ec.setMaxRuleSetLength(5);
         }
 
         if (debug) {

@@ -44,7 +44,7 @@ public class EvoElitistSelection {
     public static void compute(long seed, boolean debug, boolean trueRun) {
         FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
-        ExecutionEnv ec = ExecutionContextFactory.MONK(3, true, 10, fiteval);
+        ExecutionEnv ec = ExecutionContextFactory.MONK(1, true, 10, fiteval);
         ec.setRand(new Random(seed));
         ec.setRulePopSize(3);
         ec.setMaxRuleSetLength(2);

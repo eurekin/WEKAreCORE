@@ -44,10 +44,9 @@ public class EvoElitistSelection {
     public static void compute(long seed, boolean debug, boolean trueRun) {
         FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
-        ExecutionEnv ec = ExecutionContextFactory.MONK(1, false, 10, fiteval);
+        ExecutionEnv ec = ExecutionContextFactory.MONK(3, true, 10, fiteval);
         ec.setRand(new Random(seed));
         ec.setRulePopSize(3);
-        int popSize = 3;
         ec.setMaxRuleSetLength(2);
         ec.setRsmp(0.02);
         ec.setMt(0.02);
@@ -57,16 +56,15 @@ public class EvoElitistSelection {
         ec.setRuleSortingEnabled(false);
 
         if (trueRun) {
-            popSize = 10;
-            ec.setRulePopSize(20);
-            ec.setEliteSelectionSize(1);
+            ec.setMaxRuleSetLength(5);
+            ec.setRuleSetCount(1000);
+            ec.setEliteSelectionSize(20);
             ec.setRsmp(0.2);
             ec.setMt(0.2);
-            ec.setRuleSortingEnabled(true);
+            ec.setRuleSortingEnabled(false);
             ec.setTokenCompetitionEnabled(true);
             ec.setTokenCompetitionWeight(1.0);
             ec.setRand(new Random());
-            ec.setMaxRuleSetLength(5);
         }
 
         if (debug) {
@@ -104,7 +102,7 @@ public class EvoElitistSelection {
             } else {
                 max = co.stats().getMax();
                 if (!debug) {
-                    graphR.add(co.stats());
+                    graphRS.add(co.stats());
                 }
                 if (max < maxSoFar) {
                     System.out.println("****" + i);

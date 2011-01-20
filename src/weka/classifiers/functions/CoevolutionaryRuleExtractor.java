@@ -68,10 +68,9 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
         URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
-        String[] args = new String[]{
-            //            "-i",
-//            "-t", train.getPath()
-//            "-T", test.getPath()
+        String[] args = new String[]{ //            "-i",
+        //            "-t", train.getPath()
+        //            "-T", test.getPath()
         };
         //System.out.println("args = " + Arrays.deepToString(args));
         //runClassifier(new CoevolutionaryRuleExtractor(), args);

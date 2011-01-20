@@ -1,7 +1,6 @@
 package weka.classifiers.functions;
 
 import core.adapters.DataAdapter;
-import core.copop.CoPopulations;
 import core.copop.RuleSet;
 import core.evo.EvolutionPopulation;
 import core.ga.DefaultEvaluator;
@@ -32,11 +31,6 @@ import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.RandomizableClassifier;
-import weka.classifiers.bayes.BayesNet;
-import weka.classifiers.bayes.NaiveBayes;
-import weka.classifiers.rules.OneR;
-import weka.classifiers.rules.ZeroR;
-import weka.classifiers.trees.J48graft;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
@@ -69,10 +63,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
         URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
-        String[] args = new String[]{
-            //            "-i",
-//            "-t", train.getPath()
-//            "-T", test.getPath()
+        String[] args = new String[]{ //            "-i",
+        //            "-t", train.getPath()
+        //            "-T", test.getPath()
         };
         //System.out.println("args = " + Arrays.deepToString(args));
         //runClassifier(new CoevolutionaryRuleExtractor(), args);
@@ -158,8 +151,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
         // final report
         best = co.getBest().getRS();
-        System.out.println("The stats are "
-                           + co.ruleSets().getBest().getCm().getWeighted());
+        System.out.println("The stats are " + co.getBest().getCm().getWeighted());
         System.out.println("The final classifier:");
         System.out.println("Visualization: ");
         plotter.detailedPlots(best);
@@ -196,14 +188,16 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
             for (int i = 0; i < 50; i++) {
 //                double evalOnMonk = evalOnMonk(j, new CoevolutionaryRuleExtractor());
                 Classifier[] classifiers = new Classifier[]{
-                    new J48graft(),
-                    new ZeroR(),
-                    new OneR(),
-                    new MultilayerPerceptron(),
-                    new BayesNet(),
-                    new NaiveBayes(),
-                    new RBFNetwork(),
-                    new SMO()
+                    new EvolutionaryRuleExtractor(),
+                    new CoevolutionaryRuleExtractor(),
+//                    new J48graft(),
+//                    new ZeroR(),
+//                    new OneR(),
+//                    new MultilayerPerceptron(),
+//                    new BayesNet(),
+//                    new NaiveBayes(),
+//                    new RBFNetwork(),
+//                    new SMO()
                 };
                 for (Classifier classifier : classifiers) {
 

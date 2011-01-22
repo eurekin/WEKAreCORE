@@ -59,9 +59,12 @@ import weka.core.converters.ConverterUtils.DataSource;
  */
 public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
-    private static double evalOnMonk(int M, Classifier classifier) throws FileNotFoundException, Exception, IOException {
-        URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
-        URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
+    private static double evalOnMonk(int M, Classifier classifier)
+            throws FileNotFoundException, Exception, IOException {
+        URL train = CoevolutionaryRuleExtractor.class.getResource(
+                "/monks/monks-" + M + ".train.arff");
+        URL test = CoevolutionaryRuleExtractor.class.getResource(
+                "/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
         String[] args = new String[]{ //            "-i",
         //            "-t", train.getPath()
@@ -133,6 +136,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRsmp(ruleSetMutationProbability);
         ec.setMaxRuleSetLength(maxRulesCount);
         ec.setRulePopSize(rulePopulationSize);
+        ec.setRuleSetCount(ruleSetPopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
         ec.setTokenCompetitionWeight(1.0);
         ec.setEliteSelectionSize(1);
@@ -143,11 +147,15 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         co = new EvolutionPopulation(ec);
 
         // evolution
-        System.out.println("Starting coevolution");
+        System.out.println("Starting Evolution");
         int t = generations;
-        while (t-- > 0)
+        while (t-- > 0) {
+
             co.evolve();
-        System.out.println("Coevolution finished");
+            if (co.getBest().fitness() == 1.0d)
+                break;
+        }
+        System.out.println("Evolution finished");
 
         // final report
         best = co.getBest().getRS();
@@ -184,25 +192,24 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
      */
     public static void main(String[] argv) throws Exception {
         int M = 3;
-        for (int j = 1; j < 4; j++) {
-            for (int i = 0; i < 50; i++) {
-//                double evalOnMonk = evalOnMonk(j, new CoevolutionaryRuleExtractor());
+        for (int i = 0; i < 50; i++) { // tyyle powtórzeń
+            for (int j = 1; j < 4; j++) { // dla każdego z MONKów
                 Classifier[] classifiers = new Classifier[]{
                     new EvolutionaryRuleExtractor(),
-                    new CoevolutionaryRuleExtractor(),
-//                    new J48graft(),
-//                    new ZeroR(),
-//                    new OneR(),
-//                    new MultilayerPerceptron(),
-//                    new BayesNet(),
-//                    new NaiveBayes(),
-//                    new RBFNetwork(),
-//                    new SMO()
+                    new CoevolutionaryRuleExtractor(), //                    new J48graft(),
+                //                    new ZeroR(),
+                //                    new OneR(),
+                //                    new MultilayerPerceptron(),
+                //                    new BayesNet(),
+                //                    new NaiveBayes(),
+                //                    new RBFNetwork(),
+                //                    new SMO()
                 };
                 for (Classifier classifier : classifiers) {
 
                     double evalOnMonk = evalOnMonk(j, classifier);
-                    System.out.println(classifier.getClass().getName() + ", " + i + ", " + j + ", " + evalOnMonk);
+                    System.out.println(classifier.getClass().getName()
+                                       + ", " + i + ", " + j + ", " + evalOnMonk);
                 }
             }
         }
@@ -304,12 +311,12 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 2000;
+    private int generations = 5000;
     double ruleMutationProbability = 0.02;
-    double ruleSetMutationProbability = 0.02;
-    int maxRulesCount = 9;
+    double ruleSetMutationProbability = 0.15;
+    int maxRulesCount = 15;
     int rulePopulationSize = 200;
-    int ruleSetPopulationSize = 200;
+    int ruleSetPopulationSize = 1000;
     private boolean tokenCompetitionEnabled = true;
 
     public boolean isTokenCompetitionEnabled() {

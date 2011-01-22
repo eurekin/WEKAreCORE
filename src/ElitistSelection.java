@@ -46,7 +46,7 @@ public class ElitistSelection {
     public static void compute(long seed, boolean debug, boolean trueRun) {
         FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
-        ExecutionEnv ec = ExecutionContextFactory.MONK(3, true, 10, fiteval);
+        ExecutionEnv ec = ExecutionContextFactory.MONK(1, true, 10, fiteval);
         ec.setRand(new Random(seed));
         ec.setRulePopSize(3);
         int popSize = 3;
@@ -92,7 +92,7 @@ public class ElitistSelection {
         double maxSoFar = 0, max = 0;
         //      int i = 0;
 //        while (maxSoFar <= max || true) {
-        for (int i = 0; i < (debug ? 3 : 300000); i++) {
+        for (int i = 0; i < (debug ? 3 : 1000); i++) {
             if (ec.getDebugOptions().isElitistSelectionSpecificOutput()) {
                 System.out.println("");
                 System.out.println("Generation: " + i);

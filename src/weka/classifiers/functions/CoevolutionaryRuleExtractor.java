@@ -75,7 +75,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         //System.out.println("args = " + Arrays.deepToString(args));
         //runClassifier(new CoevolutionaryRuleExtractor(), args);
         PrintStream a = System.out;
-        File createTempFile = File.createTempFile("ignoreme", "tmp");
+        File createTempFile = File.createTempFile("reCORE", "tmp");
         System.setOut(new PrintStream(createTempFile));
         Instances trainData = DataSource.read(train.getPath());
         Instances testData = DataSource.read(test.getPath());
@@ -137,6 +137,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRsmp(ruleSetMutationProbability);
         ec.setMaxRuleSetLength(maxRulesCount);
         ec.setRulePopSize(rulePopulationSize);
+        ec.setRuleSetCount(ruleSetPopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
         ec.setTokenCompetitionWeight(1.0);
         ec.setEliteSelectionSize(1);
@@ -188,25 +189,31 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     /**
      * Main method for testing this class.
      */
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] argv) {
         int M = 3;
-        for (int j = 1; j < 4; j++) {
-            for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 50; i++) {
+            for (int j = 1; j < 4; j++) {
 //                double evalOnMonk = evalOnMonk(j, new CoevolutionaryRuleExtractor());
                 Classifier[] classifiers = new Classifier[]{
-                    new J48graft(),
-                    new ZeroR(),
-                    new OneR(),
-                    new MultilayerPerceptron(),
-                    new BayesNet(),
-                    new NaiveBayes(),
-                    new RBFNetwork(),
-                    new SMO()
+                    new CoevolutionaryRuleExtractor()
+//                    new J48graft(),
+//                    new ZeroR(),
+//                    new OneR(),
+//                    new MultilayerPerceptron(),
+//                    new BayesNet(),
+//                    new NaiveBayes(),
+//                    new RBFNetwork(),
+//                    new SMO()
                 };
                 for (Classifier classifier : classifiers) {
-
-                    double evalOnMonk = evalOnMonk(j, classifier);
-                    System.out.println(classifier.getClass().getName() + ", " + i + ", " + j + ", " + evalOnMonk);
+                    try {
+                        double evalOnMonk = evalOnMonk(j, classifier);
+                        System.out.println(classifier.getClass().getName() + "_FIT_F, " + i + ", " + j + ", " + evalOnMonk);
+                    } catch (FileNotFoundException ex) {
+                        Logger.getLogger(CoevolutionaryRuleExtractor.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(CoevolutionaryRuleExtractor.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         }

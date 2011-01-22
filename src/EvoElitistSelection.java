@@ -1,4 +1,6 @@
 
+
+
 import core.ExecutionContextFactory;
 import core.evo.EvoIndividual;
 import core.evo.EvolutionPopulation;
@@ -57,7 +59,7 @@ public class EvoElitistSelection {
 
         if (trueRun) {
             ec.setMaxRuleSetLength(5);
-            ec.setRuleSetCount(1000);
+            ec.setRuleSetCount(200);
             ec.setEliteSelectionSize(20);
             ec.setRsmp(0.2);
             ec.setMt(0.2);
@@ -88,7 +90,7 @@ public class EvoElitistSelection {
         double maxSoFar = 0, max = 0;
         //      int i = 0;
 //        while (maxSoFar <= max || true) {
-        for (int i = 0; i < (debug ? 3 : 300000); i++) {
+        for (int i = 0; i < (debug ? 3 : 1000); i++) {
             if (ec.getDebugOptions().isElitistSelectionSpecificOutput()) {
                 System.out.println("");
                 System.out.println("Generation: " + i);

@@ -64,6 +64,8 @@ import weka.core.converters.ConverterUtils.DataSource;
  */
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
+    private static boolean disableAllClassifierOutput = false;
+
     private static double evalOnMonk(int M, Classifier classifier) throws FileNotFoundException, Exception, IOException {
         URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
         URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
@@ -76,7 +78,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         //runClassifier(new CoevolutionaryRuleExtractor(), args);
         PrintStream a = System.out;
         File createTempFile = File.createTempFile("reCORE", "tmp");
-        System.setOut(new PrintStream(createTempFile));
+        if (disableAllClassifierOutput)
+            System.setOut(new PrintStream(createTempFile));
         Instances trainData = DataSource.read(train.getPath());
         Instances testData = DataSource.read(test.getPath());
         trainData.setClassIndex(trainData.numAttributes() - 1);
@@ -108,26 +111,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ExecutionEnv ec = new ExecutionEnv(1000, new Random(m_Seed), eval, adapter.getBundle(), dec, fit);
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
-        ///// Try to visualize initial problem
-        ArrayList comb;
-        Enumeration instances = data.enumerateInstances();
-        ArrayList<Instance> list = Collections.list(instances);
-        CoordCalc c = new CoordCalc(ec.signature());
-        String[][] datavis = RuleASCIIPlotter.initEmptyDataVis(c);
-        for (Instance instance : list) {
-            comb = new ArrayList();
-
-            for (int i = 0; i < instance.numAttributes() - 1; i++) {
-                comb.add((int) instance.value(i));
-            }
-            datavis[c.getY(comb)][c.getX(comb)] =
-                    new Integer((int) instance.value(instance.numAttributes() - 1)).toString();
-        }
-        RuleASCIIPlotter.simpleBinaryPlot(datavis);
-        System.out.println("About to plot training data:");
-        plotter.plotPlots(datavis);
-
-
+        if (plotter != null)
+            visualizeData(data, ec, plotter);
 
         // Set coevolution params
         long seed = System.currentTimeMillis();
@@ -163,6 +148,25 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         plotter.detailedPlots(best);
         bestString =
                 ec.getBundle().getPrinter().print(best);
+    }
+
+    private void visualizeData(Instances data, ExecutionEnv ec, final RuleASCIIPlotter plotter) {
+        ///// Try to visualize initial problem
+        ArrayList comb;
+        Enumeration instances = data.enumerateInstances();
+        ArrayList<Instance> list = Collections.list(instances);
+        CoordCalc c = new CoordCalc(ec.signature());
+        String[][] datavis = RuleASCIIPlotter.initEmptyDataVis(c);
+        for (Instance instance : list) {
+            comb = new ArrayList();
+            for (int i = 0; i < instance.numAttributes() - 1; i++) {
+                comb.add((int) instance.value(i));
+            }
+            datavis[c.getY(comb)][c.getX(comb)] = new Integer((int) instance.value(instance.numAttributes() - 1)).toString();
+        }
+        RuleASCIIPlotter.simpleBinaryPlot(datavis);
+        System.out.println("About to plot training data:");
+        plotter.plotPlots(datavis);
     }
     transient CoPopulations co;
 

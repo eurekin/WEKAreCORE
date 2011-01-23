@@ -1,13 +1,16 @@
 package core.adapters;
 
+import core.io.repr.col.IntegerDomain;
 import core.DataSetBundle;
 import core.ga.RuleChromosomeSignature;
 import core.ga.RulePrinter;
 import core.io.dataframe.Mapper;
-import core.io.dataframe.UniformDataFrame;
+import core.io.dataframe.DataFrame;
 import core.io.repr.col.AbstractColumn;
 import core.io.repr.col.Column;
+import core.io.repr.col.Domain;
 import core.io.repr.col.DomainMemoizable;
+import core.io.repr.col.FloatDomain;
 import core.vis.RuleASCIIPlotter;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -20,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -40,10 +42,10 @@ public class DataAdapter {
 
     public DataAdapter(Instances wekaInsts) {
         List<DomainMemoizable> doms = new ArrayList<DomainMemoizable>();
-        List<Column<Integer>> cols = new ArrayList<Column<Integer>>();
+        List<Column> cols = new ArrayList<Column>();
         for (final Attribute attribute : attrs(wekaInsts)) {
-            makeSureIsNominal(attribute);
-            doms.add(new AttributeDomain(attribute));
+            makeSureIsNumericalOrNominal(attribute);
+            addThisToThat(doms, attribute, wekaInsts);
             cols.add(new AttributeColumn(wekaInsts, attribute));
         }
         Attribute classAttribute = wekaInsts.classAttribute();
@@ -52,15 +54,38 @@ public class DataAdapter {
         Column<Integer> classCol = new AttributeColumn(wekaInsts, classAttribute);
         System.out.println("Got following cols: " + doms);
         RuleChromosomeSignature sig = new RuleChromosomeSignature(doms, classDom);
-        RuleASCIIPlotter plotter = new RuleASCIIPlotter(sig);
 
-        UniformDataFrame<Integer, Integer> udf =
-                new UniformDataFrame<Integer, Integer>(
+        // TODO XXX temporarily disabled
+        RuleASCIIPlotter plotter = null;
+        try {
+            plotter = new RuleASCIIPlotter(sig);
+        } catch (Exception e) {
+        }
+        DataFrame udf = new DataFrame(
                 classCol, cols, wekaInsts.numInstances());
 
-        RulePrinter rp = new RulePrinter(getMapperFor(wekaInsts));
+        // TODO XXX temporarily disabled
+        RulePrinter rp = null;
+//         rp = new RulePrinter(getMapperFor(wekaInsts));
         final String relname = wekaInsts.relationName();
         bundle = new DataSetBundle(udf, plotter, sig, rp, relname);
+    }
+
+    private void addThisToThat(List<DomainMemoizable> doms,
+            final Attribute attribute, Instances inst) {
+        if (attribute.isNominal())
+            doms.add(new AttributeDomain(attribute));
+        else if (attribute.isNumeric())
+            doms.add(new RealDomain(attribute, inst));
+        else
+            throw new IllegalStateException("Unrecognized attribute type");
+    }
+
+    private void makeSureIsNumericalOrNominal(Attribute attribute) {
+        if (!(attribute.isNominal() || attribute.isNumeric())) {
+            throw new IllegalArgumentException(
+                    "Can only handle nominal or numeric values");
+        }
     }
 
     private void makeSureIsNominal(Attribute attribute)
@@ -133,7 +158,7 @@ public class DataAdapter {
         return map;
     }
 
-    private static class AttributeColumn extends AbstractColumn<Integer> {
+    private static class AttributeColumn extends AbstractColumn {
 
         public AttributeColumn(Instances inst, Attribute atr) {
             for (Instance i : instances(inst)) {
@@ -142,21 +167,49 @@ public class DataAdapter {
         }
     }
 
-    private static class AttributeDomain implements DomainMemoizable<Integer> {
+    private static class RealDomain implements DomainMemoizable {
 
-        final HashSet<Integer> hashSet;
+        private Domain domain;
+        float max = -Float.MAX_VALUE;
+        float min = Float.MAX_VALUE;
 
-        public AttributeDomain(Attribute attribute) {
-            this.hashSet = new HashSet<Integer>(values(attribute));
+        public RealDomain(Attribute attribute, Instances inst) {
+            findMinMax(attribute, inst);
+            domain = new FloatDomain(min, max);
         }
 
-        public Set<Integer> getDomain() {
-            return hashSet;
+        private void findMinMax(Attribute atr, Instances inst) {
+            for (int i = 0; i < inst.numInstances(); i++) {
+                Instance in = inst.instance(i);
+                float v = (float) in.value(atr);
+                if (v < min)
+                    min = v;
+                if (v > max)
+                    max = v;
+            }
+        }
+
+        public Domain getDomain() {
+            return domain;
+        }
+    }
+
+    private static class AttributeDomain implements DomainMemoizable {
+
+        final IntegerDomain domain;
+
+        public AttributeDomain(Attribute attribute) {
+            HashSet<Integer> hashSet = new HashSet<Integer>(values(attribute));
+            this.domain = new IntegerDomain(hashSet);
+        }
+
+        public Domain getDomain() {
+            return domain;
         }
 
         @Override
         public String toString() {
-            return hashSet.toString();
+            return domain.toString();
         }
     }
 }

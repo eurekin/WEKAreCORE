@@ -72,7 +72,7 @@ public class ElitistSelection {
         }
 
         if (debug) {
-            //ec.getDebugOptions().setAllTrue();
+            ec.getDebugOptions().setAllTrue();
             ec.getDebugOptions().setGenerationStatisticsGathered(false);
         }
 

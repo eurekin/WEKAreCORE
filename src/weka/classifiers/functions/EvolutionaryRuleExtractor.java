@@ -5,7 +5,7 @@ import core.copop.RuleSet;
 import core.evo.EvolutionPopulation;
 import core.ga.DefaultEvaluator;
 import core.ga.GrayBinaryDecoderPlusONE;
-import core.ga.RuleDecoderSubractingOneFromClass;
+import core.ga.RuleDecoder;
 import core.ga.ops.ec.ExecutionEnv;
 import core.ga.ops.ec.FitnessEval;
 import core.ga.ops.ec.FitnessEvaluatorFactory;
@@ -102,8 +102,8 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         DataAdapter adapter = new DataAdapter(data);
         final DefaultEvaluator eval = new DefaultEvaluator();
         final GrayBinaryDecoderPlusONE bdec = new GrayBinaryDecoderPlusONE();
-        final RuleDecoderSubractingOneFromClass dec =
-                new RuleDecoderSubractingOneFromClass(adapter.getBundle().getSignature(), bdec);
+        final RuleDecoder dec =
+                new RuleDecoder(adapter.getBundle().getSignature(), bdec);
         ExecutionEnv ec = new ExecutionEnv(1000, new Random(m_Seed), eval, adapter.getBundle(), dec, fit);
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 

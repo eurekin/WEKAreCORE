@@ -1,5 +1,4 @@
 
-
 import core.ExecutionContextFactory;
 import core.copop.CoPopulations;
 import core.copop.PittsIndividual;
@@ -22,7 +21,7 @@ import javax.swing.JFrame;
  *
  * @author gmatoga
  */
-public class ElitistSelection {
+public class FirstNonNominalDataSetTest {
 
     public static void main(String[] args) {
         boolean debug = false;

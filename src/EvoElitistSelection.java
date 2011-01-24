@@ -120,7 +120,7 @@ public class EvoElitistSelection {
         }
     }
 
-    private static void constructGUI(MMMGraph graphR, MMMGraph graphRS, ExecutionEnv ec) throws HeadlessException {
+    public static void constructGUI(MMMGraph graphR, MMMGraph graphRS, ExecutionEnv ec) throws HeadlessException {
         MultiPanelFrame frame = new MultiPanelFrame();
         frame.getCenterPanel().add(graphR.getChart());
         frame.getCenterPanel().add(graphRS.getChart());

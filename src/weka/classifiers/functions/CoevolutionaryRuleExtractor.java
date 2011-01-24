@@ -5,10 +5,13 @@ import core.copop.CoPopulations;
 import core.copop.RuleSet;
 import core.ga.DefaultEvaluator;
 import core.ga.GrayBinaryDecoderPlusONE;
-import core.ga.RuleDecoderSubractingOneFromClass;
+import core.ga.RuleDecoder;
+import core.ga.RulePrinter;
 import core.ga.ops.ec.ExecutionEnv;
 import core.ga.ops.ec.FitnessEval;
 import core.ga.ops.ec.FitnessEvaluatorFactory;
+import core.io.repr.col.Domain;
+import core.io.repr.col.FloatDomain;
 import core.vis.CoordCalc;
 import core.vis.RuleASCIIPlotter;
 import java.beans.BeanInfo;
@@ -18,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,11 +35,6 @@ import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.RandomizableClassifier;
-import weka.classifiers.bayes.BayesNet;
-import weka.classifiers.bayes.NaiveBayes;
-import weka.classifiers.rules.OneR;
-import weka.classifiers.rules.ZeroR;
-import weka.classifiers.trees.J48graft;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
@@ -46,7 +45,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 
 /**
  *
- * Success is not final, failure is not fatal: it is the courage to continue
+ * Success is not final, failure is not fatal: it is the courage to continues
  * that counts.
  *                                                     --- Winston Churchill
  *
@@ -65,6 +64,17 @@ import weka.core.converters.ConverterUtils.DataSource;
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     private static boolean disableAllClassifierOutput = false;
+    transient private CoevolutionCallback callback;
+
+    private void callBack() {
+        if (callback != null) {
+            callback.coevolutionCallback(co);
+        }
+    }
+
+    public ExecutionEnv context() {
+        return co.getContext();
+    }
 
     private static double evalOnMonk(int M, Classifier classifier) throws FileNotFoundException, Exception, IOException {
         URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
@@ -96,19 +106,10 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public void buildClassifier(Instances data) throws Exception {
-
-
-        // mock MONK dataset
-        FitnessEval fit = FitnessEvaluatorFactory.EVAL_FMEASURE;
-
-        // here is the junction
-        // when DataAdapter is set as a bundle then weka's instances are used
         DataAdapter adapter = new DataAdapter(data);
-        final DefaultEvaluator eval = new DefaultEvaluator();
-        final GrayBinaryDecoderPlusONE bdec = new GrayBinaryDecoderPlusONE();
-        final RuleDecoderSubractingOneFromClass dec =
-                new RuleDecoderSubractingOneFromClass(adapter.getBundle().getSignature(), bdec);
-        ExecutionEnv ec = new ExecutionEnv(1000, new Random(m_Seed), eval, adapter.getBundle(), dec, fit);
+        ExecutionEnv ec = constructEnvironmentForWEKAInstances(adapter);
+        saveDomainTypesForFutureEvaluationWhichUsesSerialization(ec);
+
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
         if (plotter != null)
@@ -135,8 +136,10 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         // evolution
         System.out.println("Starting coevolution");
         int t = generations;
-        while (t-- > 0)
+        while (t-- > 0) {
             co.evolve();
+            callBack();
+        }
         System.out.println("Coevolution finished");
 
         // final report
@@ -145,9 +148,21 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
                            + co.ruleSets().getBest().getCm().getWeighted());
         System.out.println("The final classifier:");
         System.out.println("Visualization: ");
-        plotter.detailedPlots(best);
-        bestString =
-                ec.getBundle().getPrinter().print(best);
+        if (plotter != null)
+            plotter.detailedPlots(best);
+        RulePrinter printer = ec.getBundle().getPrinter();
+        if (printer != null)
+            bestString = printer.print(best);
+    }
+
+    public static ExecutionEnv constructEnvironmentForWEKAInstances(DataAdapter adapter) {
+        FitnessEval fit = FitnessEvaluatorFactory.EVAL_RECALL;
+
+        final DefaultEvaluator eval = new DefaultEvaluator();
+        final GrayBinaryDecoderPlusONE bdec = new GrayBinaryDecoderPlusONE();
+        final RuleDecoder dec = new RuleDecoder(adapter.getBundle().getSignature(), bdec);
+        ExecutionEnv ec = new ExecutionEnv(1000, new Random(), eval, adapter.getBundle(), dec, fit);
+        return ec;
     }
 
     private void visualizeData(Instances data, ExecutionEnv ec, final RuleASCIIPlotter plotter) {
@@ -172,9 +187,13 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public double classifyInstance(Instance instance) throws Exception {
-        ArrayList<Integer> list = new ArrayList<Integer>();
-        for (int i = 0; i < instance.numValues() - 1; i++) {
-            list.add((int) instance.value(i));
+        ArrayList<Object> list = new ArrayList<Object>();
+        for (int i = 0; i < isNumericAttribute.size(); i++) {
+            Boolean isNumeric = isNumericAttribute.get(i);
+            if (isNumeric) {
+                list.add((float) instance.value(i));
+            } else
+                list.add((int) instance.value(i));
         }
         int result = best.apply(list);
         return result;
@@ -186,6 +205,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         Capabilities result = super.getCapabilities();
         result.disableAll();
         result.enable(Capability.NOMINAL_ATTRIBUTES);
+        result.enable(Capability.NUMERIC_ATTRIBUTES);
         result.enable(Capability.NOMINAL_CLASS);
         return result;
     }
@@ -388,9 +408,13 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
             BeanInfo info = Introspector.getBeanInfo(this.getClass());
             System.out.println("Using following properties: ");
             for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+                Method readMethod = pd.getReadMethod();
+                if (readMethod == null)
+                    continue;
                 System.out.print(padRight(pd.getName(), 30));
                 System.out.print("\t");
-                Object result = pd.getReadMethod().invoke(this);
+
+                Object result = readMethod.invoke(this);
                 if (result instanceof Object[])
                     System.out.println(Arrays.deepToString((Object[]) result));
                 else
@@ -413,5 +437,17 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     // For debug only;
     private boolean ok(String option) {
         return option != null && option.length() != 0 && !option.isEmpty();
+    }
+
+    public void setCallback(CoevolutionCallback coevolutionCallback) {
+        this.callback = coevolutionCallback;
+    }
+    List<Boolean> isNumericAttribute;
+
+    private void saveDomainTypesForFutureEvaluationWhichUsesSerialization(ExecutionEnv ec) {
+        isNumericAttribute = new ArrayList<Boolean>();
+        for (Domain domain : ec.signature().getAttrDomain()) {
+            isNumericAttribute.add(domain instanceof FloatDomain);
+        }
     }
 }

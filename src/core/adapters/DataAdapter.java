@@ -51,8 +51,7 @@ public class DataAdapter {
         Attribute classAttribute = wekaInsts.classAttribute();
         makeSureIsNominal(classAttribute);
         DomainMemoizable classDom = new AttributeDomain(classAttribute);
-        Column<Integer> classCol = new AttributeColumn(wekaInsts, classAttribute);
-        System.out.println("Got following cols: " + doms);
+        Column classCol = new AttributeColumn(wekaInsts, classAttribute);
         RuleChromosomeSignature sig = new RuleChromosomeSignature(doms, classDom);
 
         // TODO XXX temporarily disabled
@@ -73,11 +72,11 @@ public class DataAdapter {
 
     private void addThisToThat(List<DomainMemoizable> doms,
             final Attribute attribute, Instances inst) {
-        if (attribute.isNominal())
+        if (attribute.isNominal()) {
             doms.add(new AttributeDomain(attribute));
-        else if (attribute.isNumeric())
+        } else if (attribute.isNumeric()) {
             doms.add(new RealDomain(attribute, inst));
-        else
+        } else
             throw new IllegalStateException("Unrecognized attribute type");
     }
 
@@ -162,7 +161,7 @@ public class DataAdapter {
 
         public AttributeColumn(Instances inst, Attribute atr) {
             for (Instance i : instances(inst)) {
-                list.add((int) (i.value(atr)));
+                list.add((float)(i.value(atr)));
             }
         }
     }
@@ -175,6 +174,7 @@ public class DataAdapter {
 
         public RealDomain(Attribute attribute, Instances inst) {
             findMinMax(attribute, inst);
+            System.out.printf("Adding numeric domain in bounds <%f, %f>\n", min, max);
             domain = new FloatDomain(min, max);
         }
 

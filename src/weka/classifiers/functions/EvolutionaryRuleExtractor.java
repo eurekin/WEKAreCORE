@@ -1,5 +1,6 @@
 package weka.classifiers.functions;
 
+import core.ga.RulePrinter;
 import core.io.repr.col.Domain;
 import core.io.repr.col.FloatDomain;
 import core.adapters.DataAdapter;
@@ -94,8 +95,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
-        if (plotter != null)
+        if (plotter != null) {
             CoevolutionaryRuleExtractor.visualizeData(data, ec, plotter);
+        }
 
         // Set Evolution params
         long seed = System.currentTimeMillis();
@@ -121,8 +123,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         while (t-- > 0) {
             co.evolve();
             callBack();
-            if (co.getBest().fitness() == 1.0d)
+            if (co.getBest().fitness() == 1.0d) {
                 break;
+            }
         }
 
         System.out.println("Evolution finished");
@@ -130,18 +133,27 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         // final report
         best = co.getBest().getRS();
         System.out.println("The stats are " + co.getBest().getCm().getWeighted());
-        System.out.println("The final classifier:");
-        System.out.println("Visualization: ");
-        plotter.detailedPlots(best);
-        bestString =
-                ec.getBundle().getPrinter().print(best);
+        if (plotter != null) {
+            System.out.println("The final classifier:");
+            System.out.println("Visualization: ");
+            plotter.detailedPlots(best);
+        }
+        RulePrinter printer = ec.getBundle().getPrinter();
+        if (printer != null) {
+            bestString = printer.print(best);
+        }
     }
 
     @Override
     public double classifyInstance(Instance instance) throws Exception {
-        ArrayList<Integer> list = new ArrayList<Integer>();
-        for (int i = 0; i < instance.numValues() - 1; i++) {
-            list.add((int) instance.value(i));
+        ArrayList<Object> list = new ArrayList<Object>();
+        for (int i = 0; i < isNumericAttribute.size(); i++) {
+            Boolean isNumeric = isNumericAttribute.get(i);
+            if (isNumeric) {
+                list.add((float) instance.value(i));
+            } else {
+                list.add((int) instance.value(i));
+            }
         }
         int result = best.apply(list);
         return result;
@@ -153,6 +165,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         Capabilities result = super.getCapabilities();
         result.disableAll();
         result.enable(Capability.NOMINAL_ATTRIBUTES);
+        result.enable(Capability.NUMERIC_ATTRIBUTES);
         result.enable(Capability.NOMINAL_CLASS);
         return result;
     }
@@ -179,7 +192,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
                     double evalOnMonk = evalOnMonk(j, classifier);
                     System.out.println(classifier.getClass().getName()
-                                       + ", " + i + ", " + j + ", " + evalOnMonk);
+                            + ", " + i + ", " + j + ", " + evalOnMonk);
                 }
             }
         }
@@ -187,10 +200,11 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public String toString() {
-        if (bestString != null && !bestString.isEmpty())
+        if (bestString != null && !bestString.isEmpty()) {
             return bestString;
-        else
+        } else {
             return "reCORE";
+        }
     }
 
     @Override
@@ -254,8 +268,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         ol.add("-CP");
         ol.add(String.valueOf(getRuleSetPopulationSize()));
 
-        if (isTokenCompetitionEnabled())
+        if (isTokenCompetitionEnabled()) {
             ol.add("-T");
+        }
 
 
         return ol.toArray(new String[]{});
@@ -263,25 +278,32 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public void setOptions(String[] options) throws Exception {
-        if (ok(Utils.getOption('G', options)))
+        if (ok(Utils.getOption('G', options))) {
             setGenerations(Integer.parseInt(Utils.getOption('G', options)));
-        if (ok(Utils.getOption("-MM", options)))
+        }
+        if (ok(Utils.getOption("-MM", options))) {
             setRuleMutationProbability(Double.parseDouble(Utils.getOption("-MM", options)));
-        if (ok(Utils.getOption("-MP", options)))
+        }
+        if (ok(Utils.getOption("-MP", options))) {
             setRuleSetMutationProbability(Double.parseDouble(Utils.getOption("-MP", options)));
-        if (ok(Utils.getOption('R', options)))
+        }
+        if (ok(Utils.getOption('R', options))) {
             setMaxRulesCount(Integer.parseInt(Utils.getOption('R', options)));
-        if (ok(Utils.getOption("-CM", options)))
+        }
+        if (ok(Utils.getOption("-CM", options))) {
             setRulePopulationSize(Integer.parseInt(Utils.getOption("-CM", options)));
-        if (ok(Utils.getOption("-CP", options)))
+        }
+        if (ok(Utils.getOption("-CP", options))) {
             setRuleSetPopulationSize(Integer.parseInt(Utils.getOption("-CP", options)));
-        if (Utils.getOptionPos("T", options) != -1)
+        }
+        if (Utils.getOptionPos("T", options) != -1) {
             setTokenCompetitionEnabled(Utils.getFlag("T", options));
+        }
 
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 5000;
+    private int generations = 20;
     double ruleMutationProbability = 0.02;
     double ruleSetMutationProbability = 0.15;
     int maxRulesCount = 15;
@@ -351,15 +373,17 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
             System.out.println("Using following properties: ");
             for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
                 Method readMethod = pd.getReadMethod();
-                if (readMethod == null)
+                if (readMethod == null) {
                     continue;
+                }
                 System.out.print(padRight(pd.getName(), 30));
                 System.out.print("\t");
                 Object result = readMethod.invoke(this);
-                if (result instanceof Object[])
+                if (result instanceof Object[]) {
                     System.out.println(Arrays.deepToString((Object[]) result));
-                else
+                } else {
                     System.out.println(result);
+                }
             }
 
         } catch (Exception ex) {

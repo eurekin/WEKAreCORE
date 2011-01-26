@@ -100,7 +100,7 @@ public class NewJFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        ensureConsoleIsRunning();
+       // ensureConsoleIsRunning();
         Integer id = 1;
         int offset = 2110;
         for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {

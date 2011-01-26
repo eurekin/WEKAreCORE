@@ -303,7 +303,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 20;
+    private int generations = 2000;
     double ruleMutationProbability = 0.02;
     double ruleSetMutationProbability = 0.15;
     int maxRulesCount = 15;

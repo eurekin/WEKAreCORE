@@ -139,6 +139,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         while (t-- > 0) {
             co.evolve();
             callBack();
+            if (co.getBest().fitness() == 1.0d)
+                break;
         }
         System.out.println("Coevolution finished");
 
@@ -165,7 +167,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         return ec;
     }
 
-    private void visualizeData(Instances data, ExecutionEnv ec, final RuleASCIIPlotter plotter) {
+    public static void visualizeData(Instances data, ExecutionEnv ec, final RuleASCIIPlotter plotter) {
         ///// Try to visualize initial problem
         ArrayList comb;
         Enumeration instances = data.enumerateInstances();

@@ -1,15 +1,11 @@
 package weka.classifiers.functions;
 
+import core.io.repr.col.Domain;
+import core.io.repr.col.FloatDomain;
 import core.adapters.DataAdapter;
 import core.copop.RuleSet;
 import core.evo.EvolutionPopulation;
-import core.ga.DefaultEvaluator;
-import core.ga.GrayBinaryDecoderPlusONE;
-import core.ga.RuleDecoder;
 import core.ga.ops.ec.ExecutionEnv;
-import core.ga.ops.ec.FitnessEval;
-import core.ga.ops.ec.FitnessEvaluatorFactory;
-import core.vis.CoordCalc;
 import core.vis.RuleASCIIPlotter;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
@@ -18,13 +14,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +33,7 @@ import weka.core.Instances;
 import weka.core.Option;
 import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
+import static weka.classifiers.functions.CoevolutionaryRuleExtractor.*;
 
 /**
  *
@@ -54,7 +50,7 @@ import weka.core.converters.ConverterUtils.DataSource;
  * ilosc pokoleń
  * token competition
  * rozmiar selekcji elitarnej
- * 
+ *
  * @author gmatoga
  */
 public class EvolutionaryRuleExtractor extends RandomizableClassifier {
@@ -92,43 +88,16 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
     @Override
     public void buildClassifier(Instances data) throws Exception {
-
-
-        // mock MONK dataset
-        FitnessEval fit = FitnessEvaluatorFactory.EVAL_FMEASURE;
-
-        // here is the junction
-        // when DataAdapter is set as a bundle then weka's instances are used
         DataAdapter adapter = new DataAdapter(data);
-        final DefaultEvaluator eval = new DefaultEvaluator();
-        final GrayBinaryDecoderPlusONE bdec = new GrayBinaryDecoderPlusONE();
-        final RuleDecoder dec =
-                new RuleDecoder(adapter.getBundle().getSignature(), bdec);
-        ExecutionEnv ec = new ExecutionEnv(1000, new Random(m_Seed), eval, adapter.getBundle(), dec, fit);
+        ExecutionEnv ec = constructEnvironmentForWEKAInstances(adapter);
+        saveDomainTypesForFutureEvaluationWhichUsesSerialization(ec);
+
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
-        ///// Try to visualize initial problem
-        ArrayList comb;
-        Enumeration instances = data.enumerateInstances();
-        ArrayList<Instance> list = Collections.list(instances);
-        CoordCalc c = new CoordCalc(ec.signature());
-        String[][] datavis = RuleASCIIPlotter.initEmptyDataVis(c);
-        for (Instance instance : list) {
-            comb = new ArrayList();
+        if (plotter != null)
+            CoevolutionaryRuleExtractor.visualizeData(data, ec, plotter);
 
-            for (int i = 0; i < instance.numAttributes() - 1; i++) {
-                comb.add((int) instance.value(i));
-            }
-            datavis[c.getY(comb)][c.getX(comb)] =
-                    new Integer((int) instance.value(instance.numAttributes() - 1)).toString();
-        }
-        RuleASCIIPlotter.simpleBinaryPlot(datavis);
-        System.out.println("About to plot training data:");
-        plotter.plotPlots(datavis);
-
-
-
-        // Set coevolution params
+        // Set Evolution params
         long seed = System.currentTimeMillis();
         ec.rand().setSeed(seed);
 
@@ -150,11 +119,12 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         System.out.println("Starting Evolution");
         int t = generations;
         while (t-- > 0) {
-
             co.evolve();
+            callBack();
             if (co.getBest().fitness() == 1.0d)
                 break;
         }
+
         System.out.println("Evolution finished");
 
         // final report
@@ -380,9 +350,12 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
             BeanInfo info = Introspector.getBeanInfo(this.getClass());
             System.out.println("Using following properties: ");
             for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+                Method readMethod = pd.getReadMethod();
+                if (readMethod == null)
+                    continue;
                 System.out.print(padRight(pd.getName(), 30));
                 System.out.print("\t");
-                Object result = pd.getReadMethod().invoke(this);
+                Object result = readMethod.invoke(this);
                 if (result instanceof Object[])
                     System.out.println(Arrays.deepToString((Object[]) result));
                 else
@@ -401,9 +374,28 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
     public static String padLeft(String s, int n) {
         return String.format("%1$#" + n + "s", s);
     }
-
     // For debug only;
+    transient private EvolutionCallback callback;
+
     private boolean ok(String option) {
         return option != null && option.length() != 0 && !option.isEmpty();
+    }
+
+    public void setCallback(EvolutionCallback coevolutionCallback) {
+        this.callback = coevolutionCallback;
+    }
+    List<Boolean> isNumericAttribute;
+
+    private void callBack() {
+        if (callback != null) {
+            callback.coevolutionCallback(co);
+        }
+    }
+
+    private void saveDomainTypesForFutureEvaluationWhichUsesSerialization(ExecutionEnv ec) {
+        isNumericAttribute = new ArrayList<Boolean>();
+        for (Domain domain : ec.signature().getAttrDomain()) {
+            isNumericAttribute.add(domain instanceof FloatDomain);
+        }
     }
 }

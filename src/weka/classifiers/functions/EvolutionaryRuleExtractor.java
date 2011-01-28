@@ -118,7 +118,8 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         co = new EvolutionPopulation(ec);
 
         // evolution
-        System.out.println("Starting Evolution");
+        if (getDebug())
+            System.out.println("Starting Evolution");
         int t = generations;
         while (t-- > 0) {
             co.evolve();
@@ -127,21 +128,24 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
                 break;
             }
         }
+        RulePrinter printer = ec.getBundle().getPrinter();
+        best = co.getBest().getRS();
+        if (printer != null) {
+            bestString = printer.print(best);
+        }
 
+        if (!getDebug())
+            return;
         System.out.println("Evolution finished");
 
         // final report
-        best = co.getBest().getRS();
         System.out.println("The stats are " + co.getBest().getCm().getWeighted());
         if (plotter != null) {
             System.out.println("The final classifier:");
             System.out.println("Visualization: ");
             plotter.detailedPlots(best);
         }
-        RulePrinter printer = ec.getBundle().getPrinter();
-        if (printer != null) {
-            bestString = printer.print(best);
-        }
+
     }
 
     @Override
@@ -192,7 +196,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
                     double evalOnMonk = evalOnMonk(j, classifier);
                     System.out.println(classifier.getClass().getName()
-                            + ", " + i + ", " + j + ", " + evalOnMonk);
+                                       + ", " + i + ", " + j + ", " + evalOnMonk);
                 }
             }
         }
@@ -303,12 +307,12 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         super.setOptions(options);
     }
     // OPTIONS
-    private int generations = 2000;
+    private int generations = 1500;
     double ruleMutationProbability = 0.02;
     double ruleSetMutationProbability = 0.15;
-    int maxRulesCount = 15;
+    int maxRulesCount = 10;
     int rulePopulationSize = 200;
-    int ruleSetPopulationSize = 1000;
+    int ruleSetPopulationSize = 200;
     private boolean tokenCompetitionEnabled = true;
 
     public boolean isTokenCompetitionEnabled() {
@@ -368,6 +372,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
     }
 
     private void spitOutOptions() {
+        if (!getDebug())
+            return;
+
         try {
             BeanInfo info = Introspector.getBeanInfo(this.getClass());
             System.out.println("Using following properties: ");

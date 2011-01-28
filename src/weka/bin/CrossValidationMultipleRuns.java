@@ -1,0 +1,179 @@
+package weka.bin;
+
+import core.adapters.TrainAndTestInstances;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import weka.core.Instances;
+import weka.core.Utils;
+import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
+
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import weka.classifiers.bayes.BayesNet;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.CoevolutionaryRuleExtractor;
+import weka.classifiers.functions.EvolutionaryRuleExtractor;
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.classifiers.functions.RBFNetwork;
+import weka.classifiers.functions.SMO;
+import weka.classifiers.trees.J48graft;
+
+/**
+ * Performs multiple runs of cross-validation.
+ *
+ * Command-line parameters:
+ * <ul>
+ *    <li>-t filename - the dataset to use</li>
+ *    <li>-x int - the number of folds to use</li>
+ *    <li>-r int - the number of runs to perform</li>
+ *    <li>-c int - the class index, "first" and "last" are accepted as well;
+ *    "last" is used by default</li>
+ *    <li>-W classifier - classname and options, enclosed by double quotes;
+ *    the classifier to cross-validate</li>
+ * </ul>
+ *
+ * Example command-line:
+ * <pre>
+ * java CrossValidationMultipleRuns -t labor.arff -c last -x 10 -r 10 -W "weka.classifiers.trees.J48 -C 0.25"
+ * </pre>
+ *
+ * @author FracPete (fracpete at waikato dot ac dot nz)
+ */
+public class CrossValidationMultipleRuns {
+
+    public static void main(String[] args) throws Exception {
+        int threadno = Runtime.getRuntime().availableProcessors();
+        ExecutorService es = Executors.newFixedThreadPool(threadno);
+        ResultCollector collector = new ResultCollector();
+
+        for (String set : "diabetes,iris,weather".split(",")) {
+            for (int i = 0; i < threadno; i++) {
+                es.submit(new Task(i, threadno, collector, set));
+            }
+        }
+
+        es.shutdown();
+
+    }
+
+    public static class Task extends Thread {
+
+        final int no, total;
+        private final ResultCollector collector;
+        String set;
+
+        public Task(int no, int total, ResultCollector collector, String set) {
+            this.no = no;
+            this.total = total;
+            this.collector = collector;
+            this.set = set;
+        }
+
+        @Override
+        public void run() {
+            try {
+                run(no, total, collector, set);
+            } catch (Exception ex) {
+                Logger.getLogger(CrossValidationMultipleRuns.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    /**
+     * Performs the cross-validation. See Javadoc of class for information
+     * on command-line parameters.
+     *
+     * @param args        the command-line parameters
+     * @throws Excecption if something goes wrong
+     */
+    public static void run(int no, int total, ResultCollector collector, String set) throws Exception {
+        // loads data and set class index
+        TrainAndTestInstances tati = new TrainAndTestInstances(set);
+        Instances data = tati.train();
+        Locale.setDefault(Locale.ENGLISH);
+        // classifier
+        String[] tmpOptions = "".split(" ");
+        String classname;
+        classname = CoevolutionaryRuleExtractor.class.getCanonicalName();
+        Classifier coevo = (Classifier) Utils.forName(Classifier.class, classname, tmpOptions);
+        Classifier[] classifiers = new Classifier[]{
+            coevo,
+            new EvolutionaryRuleExtractor(),
+            new J48graft(),
+            new NaiveBayes(),
+            new BayesNet(),
+            new SMO(),
+            new MultilayerPerceptron(),
+            new RBFNetwork()
+        };
+
+        // other options
+        int runs = 10;
+        int folds = 10;
+
+        // perform cross-validation
+        int seq = -1;
+        for (int i = 0; i < runs; i++) {
+            // randomize data
+            int seed = i + 1;
+            Random rand = new Random(seed);
+            Instances randData = new Instances(data);
+            randData.randomize(rand);
+            if (randData.classAttribute().isNominal())
+                randData.stratify(folds);
+
+            for (int n = 0; n < folds; n++) {
+                seq++;
+                if (notMyTurn(seq, no, total))
+                    continue;
+                for (Classifier classifier : classifiers) {
+                    Evaluation eval = new Evaluation(randData);
+                    Instances train = randData.trainCV(folds, n);
+                    Instances test = randData.testCV(folds, n);
+
+
+                    // build and evaluate classifier
+                    Classifier clsCopy = Classifier.makeCopy(classifier);
+                    clsCopy.buildClassifier(train);
+                    eval.evaluateModel(clsCopy, test);
+                    String format = String.format("%s,%d,%d,%.8f,%d",
+                            classifier.getClass().getCanonicalName().substring(
+                            classifier.getClass().getCanonicalName().lastIndexOf('.') + 1),
+                            i, n, eval.pctCorrect(), ((int) eval.correct()));
+                    collector.collect(format);
+                }
+            }
+//            outputEvaluationWEKAstyle(i, cls, data, folds, seed, eval);
+        }
+    }
+
+    private static void outputEvaluationWEKAstyle(int i, Classifier cls, Instances data, int folds, int seed, Evaluation eval) {
+        // output evaluation
+        System.out.println();
+        System.out.println("=== Setup run " + (i + 1) + " ===");
+        System.out.println("Classifier: " + cls.getClass().getName() + " " + Utils.joinOptions(cls.getOptions()));
+        System.out.println("Dataset: " + data.relationName());
+        System.out.println("Folds: " + folds);
+        System.out.println("Seed: " + seed);
+        System.out.println();
+        System.out.println(eval.toSummaryString("=== " + folds + "-fold Cross-validation run " + (i + 1) + "===", false));
+    }
+
+    public static boolean notMyTurn(int seq, int no, int total) {
+        return !(seq % total == no);
+    }
+
+    public static class ResultCollector {
+
+        public ResultCollector() {
+        }
+
+        public synchronized void collect(Object result) {
+            System.out.println(result);
+            System.out.flush();
+        }
+    }
+}

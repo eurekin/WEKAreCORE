@@ -44,6 +44,7 @@ public class Console extends JFrame {
             this.pi = pi;
         }
 
+        @Override
         public void run() {
             final byte[] buf = new byte[1024 * 20];
             try {

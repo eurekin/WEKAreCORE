@@ -1,4 +1,5 @@
 
+import core.adapters.TrainAndTestInstances;
 import core.adapters.DataAdapter;
 import weka.classifiers.functions.CoevolutionCallback;
 import core.copop.CoPopulations;
@@ -20,9 +21,8 @@ public class AnAttemptToBringBackAllWorkingAgain {
 
     public static void func() {
         try {
-            TrainAndTestInstances data = new TrainAndTestInstances("diabetes");
+            TrainAndTestInstances data = new TrainAndTestInstances("iris");
             CoevolutionaryRuleExtractor classifier = new CoevolutionaryRuleExtractor();
-            classifier.setGenerations(1000);
             final MMMGraph graphR = new MMMGraph("Rules");
             final MMMGraph graphRS = new MMMGraph("RulesSets");
             DataAdapter adapter = new DataAdapter(data.train());

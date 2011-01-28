@@ -1,8 +1,12 @@
 package server;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import weka.gui.Console;
 import weka.gui.InstallFilesInHome;
 
@@ -37,6 +41,7 @@ public class NewJFrame extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jButton1.setText("WEKA explorer");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -64,11 +69,10 @@ public class NewJFrame extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 136, Short.MAX_VALUE))
-                    .addComponent(jButton3))
+                    .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, 136, Short.MAX_VALUE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 136, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -78,12 +82,12 @@ public class NewJFrame extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jButton2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButton2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 103, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(5, 5, 5)
                         .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         pack();
@@ -100,23 +104,77 @@ public class NewJFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-       // ensureConsoleIsRunning();
+        // ensureConsoleIsRunning();
         Integer id = 1;
-        int offset = 2110;
-        for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
-            final Integer ident = i + offset;
-            new Thread() {
+        int offset = 1111;
+        //for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
+        final Integer ident = offset;
+        new Thread() {
 
-                @Override
-                public void run() {
-                    core.utils.ui.RemoteEngine.main(new String[]{"-p", ident.toString()});
-                }
-            }.start();
-        }
+            @Override
+            public void run() {
+                Integer port = ident;
+                Integer triesLeft = 16;
+                boolean successful = false;
+                while (!successful && triesLeft > 0)
+                    try {
+                        if (!available(port)) {
+                            System.out.println("Port: " + port + " seems already open. Trying next one.");
+                            port++;
+                            continue;
+                        }
+                        core.utils.ui.RemoteEngine.main(new String[]{"-p", port.toString()});
+                        successful = true;
+                    } catch (Exception e) {
+                        if (triesLeft > 0) {
+                            System.out.println("Warning, error while binding to port: " + port + "... retrying");
+                            port++;
+                            triesLeft--;
+                        } else {
+                            throw new RuntimeException("Couldn't bind to port after 16 retries", e);
+                        }
+                    }
+            }
+        }.start();
+        //}
     }//GEN-LAST:event_jButton2ActionPerformed
+    /**
+     * Checks to see if a specific port is available.
+     *
+     * @param port the port to check for availability
+     */
+    public static boolean available(int port) {
+        if (port < 1000 || port > 100000) {
+            throw new IllegalArgumentException("Invalid start port: " + port);
+        }
 
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
+
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                    /* should not be thrown */
+                }
+            }
+        }
+
+        return false;
+    }
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-                new Thread() {
+        new Thread() {
 
             @Override
             public void run() {
@@ -130,6 +188,17 @@ public class NewJFrame extends javax.swing.JFrame {
      */
     public static void main(String args[]) {
         InstallFilesInHome.main();
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedLookAndFeelException ex) {
+            Logger.getLogger(NewJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {

@@ -161,7 +161,7 @@ public class DataAdapter {
 
         public AttributeColumn(Instances inst, Attribute atr) {
             for (Instance i : instances(inst)) {
-                list.add((float)(i.value(atr)));
+                list.add((float) (i.value(atr)));
             }
         }
     }
@@ -174,7 +174,7 @@ public class DataAdapter {
 
         public RealDomain(Attribute attribute, Instances inst) {
             findMinMax(attribute, inst);
-            System.out.printf("Adding numeric domain in bounds <%f, %f>\n", min, max);
+            //System.out.printf("Adding numeric domain in bounds <%f, %f>\n", min, max);
             domain = new FloatDomain(min, max);
         }
 

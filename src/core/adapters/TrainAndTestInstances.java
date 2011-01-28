@@ -1,3 +1,5 @@
+package core.adapters;
+
 
 import java.net.URL;
 import weka.classifiers.functions.CoevolutionaryRuleExtractor;

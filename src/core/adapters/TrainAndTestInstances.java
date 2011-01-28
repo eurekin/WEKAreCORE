@@ -17,8 +17,9 @@ public class TrainAndTestInstances {
     private MyNiceInterface myinterface = new MyNiceInterface();
 
     public TrainAndTestInstances(String name) {
+        String trainPathString = null;
         try {
-            String trainPathString = baseFolder + name + suffix;
+            trainPathString = baseFolder + name + suffix;
             String testPathString = baseFolder + name + suffix;
             URL train = CoevolutionaryRuleExtractor.class.getResource(trainPathString);
             URL test = CoevolutionaryRuleExtractor.class.getResource(testPathString);
@@ -29,6 +30,8 @@ public class TrainAndTestInstances {
             trainData.setClassIndex(trainData.numAttributes() - 1);
             testData.setClassIndex(testData.numAttributes() - 1);
         } catch (Exception ex) {
+            System.out.println("trainPathString = " + trainPathString);
+            System.out.println("trainpath = " + trainpath);
             throw new RuntimeException(ex);
         }
     }

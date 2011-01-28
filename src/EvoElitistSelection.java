@@ -1,6 +1,4 @@
 
-
-
 import core.ExecutionContextFactory;
 import core.evo.EvoIndividual;
 import core.evo.EvolutionPopulation;

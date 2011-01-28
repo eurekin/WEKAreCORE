@@ -1,6 +1,8 @@
 
 
 import core.ExecutionContextFactory;
+import core.adapters.DataAdapter;
+import core.adapters.TrainAndTestInstances;
 import core.copop.CoPopulations;
 import core.copop.PittsIndividual;
 import core.ga.Individual;
@@ -17,6 +19,7 @@ import core.vis.RuleASCIIPlotter;
 import java.awt.HeadlessException;
 import java.util.Random;
 import javax.swing.JFrame;
+import weka.classifiers.functions.CoevolutionaryRuleExtractor;
 
 /**
  *
@@ -47,7 +50,11 @@ public class ElitistSelection {
     public static void compute(long seed, boolean debug, boolean trueRun) {
         FitnessEval fiteval = FitnessEvaluatorFactory.EVAL_FMEASURE;
 
-        ExecutionEnv ec = ExecutionContextFactory.MONK(1, true, 10, fiteval);
+        TrainAndTestInstances ins = new TrainAndTestInstances("monk-3.train");
+        DataAdapter da = new DataAdapter(ins.train());
+        ExecutionEnv c = CoevolutionaryRuleExtractor.constructEnvironmentForWEKAInstances(da);
+        ExecutionEnv ec = c;
+
 
         ec.setRand(new Random(seed));
         ec.setRulePopSize(3);

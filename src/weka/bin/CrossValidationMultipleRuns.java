@@ -139,9 +139,10 @@ public class CrossValidationMultipleRuns {
                     Classifier clsCopy = Classifier.makeCopy(classifier);
                     clsCopy.buildClassifier(train);
                     eval.evaluateModel(clsCopy, test);
-                    String format = String.format("%s,%d,%d,%.8f,%d",
+                    String format = String.format("%s,%s,%d,%d,%.8f,%d",
                             classifier.getClass().getCanonicalName().substring(
                             classifier.getClass().getCanonicalName().lastIndexOf('.') + 1),
+                            set,
                             i, n, eval.pctCorrect(), ((int) eval.correct()));
                     collector.collect(format);
                 }

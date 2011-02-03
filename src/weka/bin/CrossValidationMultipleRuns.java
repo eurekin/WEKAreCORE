@@ -59,29 +59,6 @@ public class CrossValidationMultipleRuns {
 
     }
 
-    public static class Task extends Thread {
-
-        final int no, total;
-        private final ResultCollector collector;
-        String set;
-
-        public Task(int no, int total, ResultCollector collector, String set) {
-            this.no = no;
-            this.total = total;
-            this.collector = collector;
-            this.set = set;
-        }
-
-        @Override
-        public void run() {
-            try {
-                run(no, total, collector, set);
-            } catch (Exception ex) {
-                Logger.getLogger(CrossValidationMultipleRuns.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
-
     /**
      * Performs the cross-validation. See Javadoc of class for information
      * on command-line parameters.
@@ -89,7 +66,7 @@ public class CrossValidationMultipleRuns {
      * @param args        the command-line parameters
      * @throws Excecption if something goes wrong
      */
-    public static void run(int no, int total, ResultCollector collector, String set) throws Exception {
+    public static void run2(int no, int total, ResultCollector collector, String set) throws Exception {
         // loads data and set class index
         TrainAndTestInstances tati = new TrainAndTestInstances(set);
         Instances data = tati.train();
@@ -155,6 +132,29 @@ public class CrossValidationMultipleRuns {
                 }
             }
 //            outputEvaluationWEKAstyle(i, cls, data, folds, seed, eval);
+        }
+    }
+
+    public static class Task extends Thread {
+
+        final int no, total;
+        private final ResultCollector collector;
+        String set;
+
+        public Task(int no, int total, ResultCollector collector, String set) {
+            this.no = no;
+            this.total = total;
+            this.collector = collector;
+            this.set = set;
+        }
+
+        @Override
+        public void run() {
+            try {
+                run2(no, total, collector, set);
+            } catch (Exception ex) {
+                Logger.getLogger(CrossValidationMultipleRuns.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 

@@ -1,17 +1,16 @@
 package weka.bin;
 
-import core.adapters.TrainAndTestInstances;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import weka.core.Instances;
 import weka.core.Utils;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
-
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import weka.classifiers.bayes.BayesNet;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.functions.CoevolutionaryRuleExtractor;
@@ -20,6 +19,7 @@ import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.RBFNetwork;
 import weka.classifiers.functions.SMO;
 import weka.classifiers.trees.J48graft;
+import core.adapters.TrainAndTestInstances;
 
 /**
  * Performs multiple runs of cross-validation.
@@ -97,18 +97,25 @@ public class CrossValidationMultipleRuns {
         // classifier
         String[] tmpOptions = "".split(" ");
         String classname;
-        classname = CoevolutionaryRuleExtractor.class.getCanonicalName();
-        Classifier coevo = (Classifier) Utils.forName(Classifier.class, classname, tmpOptions);
+        CoevolutionaryRuleExtractor core = new CoevolutionaryRuleExtractor();
+        core.setGenerations(1000);
+        core.setRuleMutationProbability(0.01);
+        core.setRuleSetMutationProbability(0.01);
+        core.setMaxRulesCount(9);
+        EvolutionaryRuleExtractor evol = new EvolutionaryRuleExtractor();
+        evol.setGenerations(1000);
+        evol.setRuleMutationProbability(0.01);
+        evol.setRuleSetMutationProbability(0.01);
+        evol.setMaxRulesCount(9);
+
         Classifier[] classifiers = new Classifier[]{
-            coevo,
-            new EvolutionaryRuleExtractor(),
+            core, evol,
             new J48graft(),
             new NaiveBayes(),
             new BayesNet(),
             new SMO(),
             new MultilayerPerceptron(),
-            new RBFNetwork()
-        };
+            new RBFNetwork()};
 
         // other options
         int runs = 10;

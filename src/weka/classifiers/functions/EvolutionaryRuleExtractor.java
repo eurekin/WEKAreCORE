@@ -95,7 +95,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
-        if (plotter != null) {
+        if (plotter != null && getDebug()) {
             CoevolutionaryRuleExtractor.visualizeData(data, ec, plotter);
         }
 
@@ -114,7 +114,9 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
 
         spitOutOptions();
 
-
+        if (getDebug()) {
+            ec.getDebugOptions().setAllTrue();
+        }
         co = new EvolutionPopulation(ec);
 
         // evolution
@@ -309,7 +311,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
     // OPTIONS
     private int generations = 1500;
     double ruleMutationProbability = 0.02;
-    double ruleSetMutationProbability = 0.15;
+    double ruleSetMutationProbability = 0.02;
     int maxRulesCount = 10;
     int rulePopulationSize = 200;
     int ruleSetPopulationSize = 200;

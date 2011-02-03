@@ -1,6 +1,5 @@
 package core.adapters;
 
-
 import java.net.URL;
 import weka.classifiers.functions.CoevolutionaryRuleExtractor;
 import weka.core.Instances;
@@ -17,10 +16,14 @@ public class TrainAndTestInstances {
     private MyNiceInterface myinterface = new MyNiceInterface();
 
     public TrainAndTestInstances(String name) {
+        this(name, name);
+    }
+
+    public TrainAndTestInstances(String trainname, String testname) {
         String trainPathString = null;
         try {
-            trainPathString = baseFolder + name + suffix;
-            String testPathString = baseFolder + name + suffix;
+            trainPathString = baseFolder + trainname + suffix;
+            String testPathString = baseFolder + testname + suffix;
             URL train = CoevolutionaryRuleExtractor.class.getResource(trainPathString);
             URL test = CoevolutionaryRuleExtractor.class.getResource(testPathString);
             trainpath = train.getPath();
@@ -61,6 +64,7 @@ public class TrainAndTestInstances {
         public String train() {
             return trainpath;
         }
+
         public String test() {
             return testpath;
         }

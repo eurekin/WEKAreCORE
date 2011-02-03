@@ -63,7 +63,7 @@ import weka.core.converters.ConverterUtils.DataSource;
  */
 public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
-    private static boolean disableAllClassifierOutput = true;
+    private static boolean disableAllClassifierOutput = false;
     transient private CoevolutionCallback callback;
 
     private void callBack() {
@@ -76,20 +76,23 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         return co.getContext();
     }
 
-    private static double evalOnMonk(int M, Classifier classifier) throws FileNotFoundException, Exception, IOException {
-        URL train = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".train.arff");
-        URL test = CoevolutionaryRuleExtractor.class.getResource("/monks/monks-" + M + ".test.arff");
+    private static double evalOnMonk(int M, Classifier classifier)
+            throws FileNotFoundException, Exception, IOException {
+        Class cl = CoevolutionaryRuleExtractor.class;
+        URL train = cl.getResource("/monks/monks-" + M + ".train.arff");
+        URL test = cl.getResource("/monks/monks-" + M + ".test.arff");
         // Instances.main(new String[] {resource.getPath()});
         String[] args = new String[]{ //            "-i",
         //            "-t", train.getPath()
         //            "-T", test.getPath()
         };
         //System.out.println("args = " + Arrays.deepToString(args));
-        //runClassifier(new CoevolutionaryRuleExtractor(), args);
+        runClassifier(new CoevolutionaryRuleExtractor(), args);
         PrintStream a = System.out;
-        File createTempFile = File.createTempFile("reCORE", "tmp");
-        if (disableAllClassifierOutput)
+        if (disableAllClassifierOutput) {
+            File createTempFile = File.createTempFile("reCORE", "tmp");
             System.setOut(new PrintStream(createTempFile));
+        }
         Instances trainData = DataSource.read(train.getPath());
         Instances testData = DataSource.read(test.getPath());
         trainData.setClassIndex(trainData.numAttributes() - 1);
@@ -112,7 +115,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
         final RuleASCIIPlotter plotter = ec.getBundle().getPlotter();
 
-        if (plotter != null)
+        if (plotter != null && getDebug())
             visualizeData(data, ec, plotter);
 
         // Set coevolution params
@@ -128,6 +131,9 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setTokenCompetitionWeight(1.0);
         ec.setEliteSelectionSize(1);
 
+        if(getDebug()) {
+            ec.getDebugOptions().setAllTrue();
+        }
         spitOutOptions();
 
 
@@ -158,6 +164,9 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         RulePrinter printer = ec.getBundle().getPrinter();
         if (printer != null)
             bestString = printer.print(best);
+        if(getDebug()) {
+            System.out.println(bestString);
+        }
     }
 
     public static ExecutionEnv constructEnvironmentForWEKAInstances(DataAdapter adapter) {
@@ -351,7 +360,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     // OPTIONS
     private int generations = 1500;
     double ruleMutationProbability = 0.02;
-    double ruleSetMutationProbability = 0.15;
+    double ruleSetMutationProbability = 0.02;
     int maxRulesCount = 10;
     int rulePopulationSize = 200;
     int ruleSetPopulationSize = 200;

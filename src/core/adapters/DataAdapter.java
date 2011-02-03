@@ -11,7 +11,6 @@ import core.io.repr.col.Column;
 import core.io.repr.col.Domain;
 import core.io.repr.col.DomainMemoizable;
 import core.io.repr.col.FloatDomain;
-import core.vis.RuleASCIIPlotter;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -27,6 +26,7 @@ import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader.ArffReader;
+import core.vis.RuleASCIIPlotter;
 
 /**
  *
@@ -59,13 +59,18 @@ public class DataAdapter {
         try {
             plotter = new RuleASCIIPlotter(sig);
         } catch (Exception e) {
+            e.printStackTrace();
         }
         DataFrame udf = new DataFrame(
                 classCol, cols, wekaInsts.numInstances());
 
         // TODO XXX temporarily disabled
         RulePrinter rp = null;
-//         rp = new RulePrinter(getMapperFor(wekaInsts));
+        try {
+            rp = new RulePrinter(getMapperFor(wekaInsts));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         final String relname = wekaInsts.relationName();
         bundle = new DataSetBundle(udf, plotter, sig, rp, relname);
     }
@@ -133,7 +138,11 @@ public class DataAdapter {
 
         int j = 0;
         for (Attribute attribute : atrs) {
-            valmap.put(j, toMap(Collections.list(attribute.enumerateValues())));
+            if (attribute.isNominal()) {
+                valmap.put(j, toMap(Collections.list(attribute.enumerateValues())));
+            } else {
+                valmap.put(j, null);
+            }
             namemap.put(j, attribute.name());
             j++;
         }

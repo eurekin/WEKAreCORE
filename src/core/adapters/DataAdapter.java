@@ -59,7 +59,6 @@ public class DataAdapter {
         try {
             plotter = new RuleASCIIPlotter(sig);
         } catch (Exception e) {
-            e.printStackTrace();
         }
         DataFrame udf = new DataFrame(
                 classCol, cols, wekaInsts.numInstances());
@@ -69,7 +68,6 @@ public class DataAdapter {
         try {
             rp = new RulePrinter(getMapperFor(wekaInsts));
         } catch (Exception e) {
-            e.printStackTrace();
         }
         final String relname = wekaInsts.relationName();
         bundle = new DataSetBundle(udf, plotter, sig, rp, relname);

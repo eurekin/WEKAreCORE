@@ -23,9 +23,11 @@ public class TheresSomethingWrongWithMONKS_COEVO {
 
     public TheresSomethingWrongWithMONKS_COEVO() {
         evoGUI evoGUI = new evoGUI(graphR, graphRS);
-//        String file = "monks-2.train";
+        String file = "monks-3.train";
 //        String file = "soybean";
-        String file = "iris";
+//        String file = "iris";
+//        String file = "glass";
+//        String file = "diabetes";
         data = new TrainAndTestInstances(file);
     }
 
@@ -34,7 +36,7 @@ public class TheresSomethingWrongWithMONKS_COEVO {
         core.setGenerations(30000);
         core.setRuleSetMutationProbability(0.02);
         core.setRuleMutationProbability(0.02);
-        core.setTokenCompetitionEnabled(false);
+        core.setTokenCompetitionEnabled(true);
         core.setMaxRulesCount(10);
         core.setRulePopulationSize(200);
         core.setRuleSetPopulationSize(200);

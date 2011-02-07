@@ -39,6 +39,36 @@ public class TrainAndTestInstances {
         }
     }
 
+    public boolean hasMissing() {
+        int missing = 0;
+        for (int i = 0; i < train().numAttributes(); i++) {
+            missing += train().attributeStats(i).missingCount;
+        }
+        return missing > 0;
+    }
+
+    public boolean onlyNominal() {
+        int nonNominal = 0;
+        for (int i = 0; i < train().numAttributes(); i++) {
+            if (!train().attribute(i).isNominal())
+                nonNominal++;
+        }
+        return nonNominal == 0;
+    }
+
+    public boolean onlyNumeric() {
+        int numeric = 0;
+        for (int i = 0; i < train().numAttributes() - 1; i++) {
+            if (train().attribute(i).isNumeric())
+                numeric++;
+        }
+        return numeric == 0;
+    }
+
+    public boolean testDifferentFromTrain() {
+        return (trainpath == null ? testpath != null : !trainpath.equals(testpath));
+    }
+
     public Instances train() {
         return trainData;
     }

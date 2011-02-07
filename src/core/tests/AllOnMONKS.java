@@ -1,5 +1,6 @@
-package weka.bin;
+package core.tests;
 
+import weka.bin.*;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,14 +43,14 @@ import core.adapters.TrainAndTestInstances;
  *
  * @author FracPete (fracpete at waikato dot ac dot nz)
  */
-public class CrossValidationMultipleRuns {
+public class AllOnMONKS {
 
     public static void main(String[] args) throws Exception {
         int threadno = Runtime.getRuntime().availableProcessors();
         ExecutorService es = Executors.newFixedThreadPool(threadno);
         ResultCollector collector = new ResultCollector();
 
-        for (String set : "monks-1,monks-2,monks-3".split(",")) {
+        for (String set : "diabetes,iris,weather".split(",")) {
             for (int i = 0; i < threadno; i++) {
                 es.submit(new Task(i, threadno, collector, set));
             }
@@ -68,10 +69,12 @@ public class CrossValidationMultipleRuns {
      */
     public static void run2(int no, int total, ResultCollector collector, String set) throws Exception {
         // loads data and set class index
-        TrainAndTestInstances tati = new TrainAndTestInstances(set + ".train", set + ".test");
+        TrainAndTestInstances tati = new TrainAndTestInstances(set);
         Instances data = tati.train();
         Locale.setDefault(Locale.ENGLISH);
         // classifier
+        String[] tmpOptions = "".split(" ");
+        String classname;
         CoevolutionaryRuleExtractor core = new CoevolutionaryRuleExtractor();
         core.setGenerations(1000);
         core.setRuleMutationProbability(0.01);
@@ -93,28 +96,41 @@ public class CrossValidationMultipleRuns {
             new RBFNetwork()};
 
         // other options
-        int runs = 13;
+        int runs = 10;
+        int folds = 10;
 
         // perform cross-validation
+        int seq = -1;
         for (int i = 0; i < runs; i++) {
             // randomize data
+            int seed = i + 1;
+            Random rand = new Random(seed);
+            Instances randData = new Instances(data);
+            randData.randomize(rand);
+            if (randData.classAttribute().isNominal())
+                randData.stratify(folds);
 
+            for (int n = 0; n < folds; n++) {
+                seq++;
+                if (notMyTurn(seq, no, total))
+                    continue;
                 for (Classifier classifier : classifiers) {
-                    Evaluation eval = new Evaluation(data);
-                    Instances train = tati.train();
-                    Instances test = tati.test();
+                    Evaluation eval = new Evaluation(randData);
+                    Instances train = randData.trainCV(folds, n);
+                    Instances test = randData.testCV(folds, n);
 
 
                     // build and evaluate classifier
                     Classifier clsCopy = Classifier.makeCopy(classifier);
                     clsCopy.buildClassifier(train);
                     eval.evaluateModel(clsCopy, test);
-                    String format = String.format("%s,%s,%d,%.8f,%d",
+                    String format = String.format("%s,%s,%d,%d,%.8f,%d",
                             classifier.getClass().getCanonicalName().substring(
                             classifier.getClass().getCanonicalName().lastIndexOf('.') + 1),
                             set,
-                            i, eval.pctCorrect(), ((int) eval.correct()));
+                            i, n, eval.pctCorrect(), ((int) eval.correct()));
                     collector.collect(format);
+                }
             }
 //            outputEvaluationWEKAstyle(i, cls, data, folds, seed, eval);
         }
@@ -138,7 +154,7 @@ public class CrossValidationMultipleRuns {
             try {
                 run2(no, total, collector, set);
             } catch (Exception ex) {
-                Logger.getLogger(CrossValidationMultipleRuns.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(AllOnMONKS.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

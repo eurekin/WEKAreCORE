@@ -22,8 +22,8 @@ public class TheresSomethingWrongWithMONKS {
 
     public TheresSomethingWrongWithMONKS() {
         evoGUI evoGUI = new evoGUI(graphR, graphRS);
-        String file = "monks-2.train";
-//        String file = "soybean";
+//        String file = "monks-3.train";
+        String file = "soybean";
 //        String file = "iris";
         data = new TrainAndTestInstances(file);
     }
@@ -33,7 +33,7 @@ public class TheresSomethingWrongWithMONKS {
         evol.setGenerations(30000);
         evol.setRuleSetMutationProbability(0.01);
         evol.setRuleMutationProbability(0.01);
-        evol.setTokenCompetitionEnabled(false);
+        evol.setTokenCompetitionEnabled(true);
         evol.setMaxRulesCount(10);
         evol.setRuleSetPopulationSize(200);
         evol.setDebug(false);

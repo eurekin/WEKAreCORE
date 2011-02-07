@@ -37,7 +37,8 @@ import core.adapters.TrainAndTestInstances;
  *
  * Example command-line:
  * <pre>
- * java CrossValidationMultipleRuns -t labor.arff -c last -x 10 -r 10 -W "weka.classifiers.trees.J48 -C 0.25"
+ * java CrossValidationMultipleRuns -t labor.arff -c last -x 10 -r 10 -W
+ * "weka.classifiers.trees.J48 -C 0.25"
  * </pre>
  *
  * @author FracPete (fracpete at waikato dot ac dot nz)
@@ -49,14 +50,12 @@ public class CrossValidationMultipleRuns {
         ExecutorService es = Executors.newFixedThreadPool(threadno);
         ResultCollector collector = new ResultCollector();
 
-        for (String set : "monks-1,monks-2,monks-3".split(",")) {
+        for (String set : "diabetes,iris,weather,glass".split(",")) {
             for (int i = 0; i < threadno; i++) {
                 es.submit(new Task(i, threadno, collector, set));
             }
         }
-
         es.shutdown();
-
     }
 
     /**
@@ -66,7 +65,8 @@ public class CrossValidationMultipleRuns {
      * @param args        the command-line parameters
      * @throws Excecption if something goes wrong
      */
-    public static void run2(int no, int total, ResultCollector collector, String set) throws Exception {
+    public static void run2(int no, int total, ResultCollector collector,
+            String set) throws Exception {
         // loads data and set class index
         TrainAndTestInstances tati = new TrainAndTestInstances(set + ".train", set + ".test");
         Instances data = tati.train();
@@ -84,7 +84,8 @@ public class CrossValidationMultipleRuns {
         evol.setMaxRulesCount(9);
 
         Classifier[] classifiers = new Classifier[]{
-            core, evol,
+            core,
+            evol,
             new J48graft(),
             new NaiveBayes(),
             new BayesNet(),
@@ -93,8 +94,8 @@ public class CrossValidationMultipleRuns {
             new RBFNetwork()};
 
         // other options
-        int runs = 13;
-
+        int runs = 5;
+        int folds = 10;
         // perform cross-validation
         for (int i = 0; i < runs; i++) {
             // randomize data
@@ -138,21 +139,26 @@ public class CrossValidationMultipleRuns {
             try {
                 run2(no, total, collector, set);
             } catch (Exception ex) {
-                Logger.getLogger(CrossValidationMultipleRuns.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(
+                        CrossValidationMultipleRuns.class.getName()).log(
+                        Level.SEVERE, null, ex);
             }
         }
     }
 
-    private static void outputEvaluationWEKAstyle(int i, Classifier cls, Instances data, int folds, int seed, Evaluation eval) {
+    private static void outputEvaluationWEKAstyle(int i, Classifier cls,
+            Instances data, int folds, int seed, Evaluation eval) {
         // output evaluation
         System.out.println();
         System.out.println("=== Setup run " + (i + 1) + " ===");
-        System.out.println("Classifier: " + cls.getClass().getName() + " " + Utils.joinOptions(cls.getOptions()));
+        System.out.println("Classifier: " + cls.getClass().getName()
+                + " " + Utils.joinOptions(cls.getOptions()));
         System.out.println("Dataset: " + data.relationName());
         System.out.println("Folds: " + folds);
         System.out.println("Seed: " + seed);
         System.out.println();
-        System.out.println(eval.toSummaryString("=== " + folds + "-fold Cross-validation run " + (i + 1) + "===", false));
+        System.out.println(eval.toSummaryString("=== " + folds
+                + "-fold Cross-validation run " + (i + 1) + "===", false));
     }
 
     public static boolean notMyTurn(int seq, int no, int total) {

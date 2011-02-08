@@ -86,6 +86,15 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
     private RuleSet best;
     private String bestString;
     transient EvolutionPopulation co;
+    private int seltype = 2;
+
+    public int getSeltype() {
+        return seltype;
+    }
+
+    public void setSeltype(int seltype) {
+        this.seltype = seltype;
+    }
 
     @Override
     public void buildClassifier(Instances data) throws Exception {
@@ -109,6 +118,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRulePopSize(rulePopulationSize);
         ec.setRuleSetCount(ruleSetPopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
+        ec.setSelectionType(seltype);
         ec.setTokenCompetitionWeight(1.0);
         ec.setEliteSelectionSize(1);
 

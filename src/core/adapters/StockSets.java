@@ -33,6 +33,10 @@ public class StockSets {
         return new TrainAndTestInstances("monks-2.train", "monks-2.test");
     }
 
+    public static TrainAndTestInstances iris() {
+        return new TrainAndTestInstances("iris");
+    }
+
     public static TrainAndTestInstances monks3() {
         return new TrainAndTestInstances("monks-3.train", "monks-3.test");
     }

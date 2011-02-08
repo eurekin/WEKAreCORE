@@ -65,6 +65,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     private static boolean disableAllClassifierOutput = false;
     transient private CoevolutionCallback callback;
+    private int seltype = 2;
 
     private void callBack() {
         if (callback != null) {
@@ -128,10 +129,11 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRulePopSize(rulePopulationSize);
         ec.setRuleSetCount(ruleSetPopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
+        ec.setSelectionType(seltype);
         ec.setTokenCompetitionWeight(1.0);
         ec.setEliteSelectionSize(1);
 
-        if(getDebug()) {
+        if (getDebug()) {
             ec.getDebugOptions().setAllTrue();
         }
         spitOutOptions();
@@ -164,7 +166,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         RulePrinter printer = ec.getBundle().getPrinter();
         if (printer != null)
             bestString = printer.print(best);
-        if(getDebug()) {
+        if (getDebug()) {
             System.out.println(bestString);
         }
     }
@@ -470,5 +472,13 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         for (Domain domain : ec.signature().getAttrDomain()) {
             isNumericAttribute.add(domain instanceof FloatDomain);
         }
+    }
+
+    public void setSelection(int seltype) {
+        this.seltype = seltype;
+    }
+
+    public int getSeltype() {
+        return seltype;
     }
 }

@@ -383,7 +383,7 @@ public class EvolutionaryRuleExtractor extends RandomizableClassifier {
         this.ruleSetPopulationSize = ruleSetPopulationSize;
     }
 
-    private void spitOutOptions() {
+    public void spitOutOptions() {
         if (!getDebug())
             return;
 

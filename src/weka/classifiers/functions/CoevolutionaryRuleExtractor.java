@@ -66,6 +66,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
     private static boolean disableAllClassifierOutput = false;
     transient private CoevolutionCallback callback;
     private int seltype = 2;
+    int eliteSelectionSize = 1;
 
     private void callBack() {
         if (callback != null) {
@@ -130,8 +131,8 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         ec.setRuleSetCount(ruleSetPopulationSize);
         ec.setTokenCompetitionEnabled(tokenCompetitionEnabled);
         ec.setSelectionType(seltype);
+        ec.setEliteSelectionSize(eliteSelectionSize);
         ec.setTokenCompetitionWeight(1.0);
-        ec.setEliteSelectionSize(1);
 
         if (getDebug()) {
             ec.getDebugOptions().setAllTrue();
@@ -424,7 +425,7 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         this.ruleSetPopulationSize = ruleSetPopulationSize;
     }
 
-    private void spitOutOptions() {
+    public void spitOutOptions() {
         if (!getDebug())
             return;
         try {
@@ -480,5 +481,13 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
 
     public int getSeltype() {
         return seltype;
+    }
+
+    public int getEliteSelectionSize() {
+        return eliteSelectionSize;
+    }
+
+    public void setEliteSelectionSize(int eliteSelectionSize) {
+        this.eliteSelectionSize = eliteSelectionSize;
     }
 }

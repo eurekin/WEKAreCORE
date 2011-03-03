@@ -146,11 +146,16 @@ public class CoevolutionaryRuleExtractor extends RandomizableClassifier {
         if (getDebug())
             System.out.println("Starting coevolution");
         int t = generations;
-        while (t-- > 0) {
-            co.evolve();
-            callBack();
+        try {
+            while (t-- > 0) {
+                co.evolve();
+                callBack();
 //            if (co.getBest().fitness() == 1.0d)
 //                break;
+            }
+        } catch (NullPointerException e) {
+            System.out.println("Got error at gen " + (generations - t));
+            throw e;
         }
         best = co.getBest().getRS();
         if (!getDebug())

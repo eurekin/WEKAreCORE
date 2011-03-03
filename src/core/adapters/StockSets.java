@@ -40,4 +40,8 @@ public class StockSets {
     public static TrainAndTestInstances monks3() {
         return new TrainAndTestInstances("monks-3.train", "monks-3.test");
     }
+
+    public static TrainAndTestInstances glass() {
+        return new TrainAndTestInstances("glass");
+    }
 }
